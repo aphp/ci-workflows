@@ -1,11 +1,23 @@
 name: build
 
 on:
-  push:
-    branches:
-      - "dev"
-    tags:
-      - "v*.*.*"
+  workflow_call:
+    inputs:
+      dockerfile-name:
+        description: "Name to the Dockerfile of your project"
+        required: true
+        type: string 
+        default: "Dockerfile"
+      dockerfile-context:
+        description: "Path to the folder holding the Dockerfile of your project"
+        required: true
+        type: string 
+        default: "."
+      image-name:
+        description: "Image name, including tag"
+        required: true
+        type: string 
+        default: "./Dockerfile"
 
 jobs:
   lint-dockerfile:
@@ -17,7 +29,7 @@ jobs:
       - name: Lint Dockerfile with Hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: ./<<your-dockerfile-folder>>/Dockerfile
+          dockerfile: ${{ inputs.dockerfile-context }}/${{ inputs.dockerfile-name }}
           override-info: DL3008,DL3018,DL3041,SC2046
           failure-threshold: warning
 
@@ -29,18 +41,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Build container from Dockerfile
-        run: docker build -t ghcr.io/aphp/<<your-image-name-and-tag>>  :${{ github.sha }} ./<<your-dockerfile-folder>>
+        run: docker build -t ghcr.io/aphp/${{ inputs.image-name }}  :${{ github.sha }} ${{ inputs.dockerfile-context }}
       - name: Run Dockle
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: ghcr.io/aphp/redcap-<<your-image-name>>:${{ github.sha }}
+          image: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
           report-format: json
           failure-threshold: fatal
           exit-code: 1
       - name: Scan container for vulnerabilities with Trivy
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'ghcr.io/aphp/<<your-image-name-and-tag>>:${{ github.sha }}'
+          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}${{ github.sha }}'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -52,6 +64,7 @@ jobs:
     name: push-docker-image
     needs: scan-docker-image
     runs-on: ubuntu-24.04
+    secrets: inherit
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,7 +75,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ghcr.io/aphp/<<your-image-name-and-tag>>       
+            ghcr.io/aphp/${{ inputs.image-name }}      
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -89,7 +102,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:<<your-dockerfile-folder>>"
+          context: "{{defaultContext}}:${{ inputs.dockerfile-context }}"
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

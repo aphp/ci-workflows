@@ -42,7 +42,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Build container from Dockerfile
-        run: docker build -t ghcr.io/aphp/${{ inputs.image-name }}  :${{ github.sha }} ${{ inputs.dockerfile-context }}
+        run: docker build -t ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }} ${{ inputs.dockerfile-context }}
       - name: Run Dockle
         uses: erzz/dockle-action@v1.4.0
         with:

@@ -1,10 +1,18 @@
 name: Chart CI
 
 on:
-  push:
-    branches:
-      - "dev"
-      - "main"
+  workflow_call:
+    inputs:
+      chart-dir:
+        description: "Directory holding your Chart"
+        required: true
+        type: string 
+        default: "chart"
+      kubernetes-version:
+        description: "Version of the target Kubernetes cluster the Chart will run on"
+        required: true
+        type: string 
+        default: "1.24.2"
 
 jobs: 
   lint-test:
@@ -61,7 +69,11 @@ jobs:
       - name: Run chart-testing (kubeconform)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-          helm kubeconform ./charts/<<your-chart-directory>> --output json --kubernetes-version "1.24.0" --strict --summary
+          helm kubeconform ./charts/${{ inputs.chart-dir }} \
+            --output json \
+            --kubernetes-version ${{ inputs.kubernetes-version }} \
+            --strict \
+            --summary
 
       - name: Run chart-testing (polaris)
         if: steps.list-changed.outputs.changed == 'true'
@@ -70,10 +82,29 @@ jobs:
             --only-show-failed-tests \
             --set-exit-code-below-score=80 \
             --set-exit-code-on-danger=true \
-            --helm-chart ./charts/<<your-chart-directory>> \
-            --helm-values ./charts/<<your-chart-directory>>/tests/values.yaml \
+            --helm-chart ${{ inputs.chart-dir }} \
+            --helm-values ${{ inputs.chart-dir }}/values.yaml \
             --format=pretty \
             --color=true
+
+      - name: Run Trivy vulnerability scanner with rootfs command
+        if: steps.list-changed.outputs.changed == 'true'
+        uses: aquasecurity/trivy-action@0.28.0
+        env:
+          TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
+        with:
+          scan-type: 'rootfs'
+          scan-ref: 'rootfs-example-binary'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: steps.list-changed.outputs.changed == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
 
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
@@ -102,7 +133,7 @@ jobs:
     - name: Helm-docs
       uses: losisin/helm-docs-github-action@v1.3.3
       with:
-        chart-search-root: ./charts/<<your-chart-directory>>
+        chart-search-root: ./charts/${{ inputs.chart-dir }}
         values-file : ./values.yaml
         output-file: ./README.md
         template-files: ./README.md.gotpl
@@ -111,12 +142,13 @@ jobs:
     - name: Generate values schema json
       uses: losisin/helm-values-schema-json-action@v1.5.3
       with:
-        input: ./charts/<<your-chart-directory>>/values.yaml
-        output: ./charts/<<your-chart-directory>>/values.schema.json
+        input: ./charts/${{ inputs.chart-dir }}/values.yaml
+        output: ./charts/${{ inputs.chart-dir }}/values.schema.json
 
 
   release:
     needs: generate-doc-schema
+    secrets: inherit
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -151,7 +183,7 @@ jobs:
       - name: Add release suffix - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
-          yq -i '.version |= . + "-dev"' charts/<<your-chart-directory>>/Chart.yaml
+          yq -i '.version |= . + "-dev"' charts/${{ inputs.chart-dir }}/Chart.yaml
   
       - name: Run chart-releaser - DEV
         if: github.ref == 'refs/heads/dev'

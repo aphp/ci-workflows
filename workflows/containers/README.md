@@ -1,9 +1,57 @@
-# Containers CI GitHub Workflow
+# Helm Charts CI GitHub Workflow
 
 ## Presentation
 
-## What can I do with it?
+### Description
+
+This component aims to provide with security and quality checks for container images, before pushing them on your project's GHCR (GitHub Container Registry).
+
+### Tools
+
+- Linting (`lint-dockerfile` job)
+  - Hadolint
+  - Dockle
+
+- Security (`scan-docker-image` job)
+  - Trivy
+
+- Publishing (`release` job)
+  - Docker build-and-push
+
 
 ## Prerequisites
 
+This workflow should work out-of-the-box for public projects. Execution on private projects is not supported for now, and may require some additional steps to set the correct permissions for the workflow being able to push the image in your private GHCR.  
+
 ## How to use
+
+### Calling this workflow
+
+To define a job that calls a reusable workflow, just read the [the corresponding documentation](https://docs.github.com/en/actions/sharing-automations/reusing-workflows#calling-a-reusable-workflow).
+
+### Inputs definition
+
+This workflow's inputs are as follows : 
+- `dockerfile-name`:
+  - description: "Name to the Dockerfile of your project"
+  - required: true
+  - type: string 
+  - default: "Dockerfile"
+- `dockerfile-context`:
+  - description: "Path to the folder holding the Dockerfile of your project"
+  - required: true
+  - type: string 
+  - default: "."
+- `image-name`:
+  - description: "Image name, including tag"
+  - required: true
+  - type: string 
+  - default: "./Dockerfile"
+
+## How to contribute?
+
+We welcome any feedback and contributions. If you want to add your contribution to this component, you can fork this repository, open a PR with your changes, and ping a maintainer for us to have a look at it.
+
+## How to raise bugs or issues?
+
+You can open an Issue in the the Issue board of this project.

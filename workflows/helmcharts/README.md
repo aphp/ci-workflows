@@ -4,7 +4,7 @@
 
 ### Description
 
-This component aims to provide with security and quality checks for Helm charts, before pushing them a repositoy hosted in your project's Github Page that can be used as a Helm Repository.
+This component aims to provide with security and quality checks for Helm charts, before pushing them a repository hosted in your project's Github Page that can be used as a Helm Repository.
 
 ### Tools
 

@@ -53,7 +53,7 @@ jobs:
       - name: Scan container for vulnerabilities with Trivy
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}${{ github.sha }}'
+          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'vuln,secret,license'

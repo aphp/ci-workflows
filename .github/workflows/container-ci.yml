@@ -101,8 +101,9 @@ jobs:
 
       - name: Load image
         run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
           docker load --input /tmp/container-image.${{github.run_id}}.tar
-          docker image ls -a
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
 
       - name: Build Dockle report
         uses: erzz/dockle-action@v1.4.0
@@ -139,8 +140,9 @@ jobs:
 
       - name: Load image
         run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
           docker load --input /tmp/container-image.${{github.run_id}}.tar
-          docker image ls -a
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
 
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
@@ -186,8 +188,9 @@ jobs:
 
       - name: Load image
         run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
           docker load --input /tmp/container-image.${{github.run_id}}.tar
-          docker image ls -a
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
 
       - name: Build Trivy License report
         uses: aquasecurity/trivy-action@0.29.0
@@ -234,8 +237,9 @@ jobs:
 
       - name: Load image
         run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
           docker load --input /tmp/container-image.${{github.run_id}}.tar
-          docker image ls -a
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3.3.0

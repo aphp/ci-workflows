@@ -79,17 +79,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           push: false
-          outputs: type=docker,dest=/tmp/container-image.tar
-
-      - name: Debug - list buildx artifacts
-        run: |
-          ls -al /tmp/container-image.tar
+          outputs: type=docker,dest=/tmp/container-image.tar ${{github.run_id}}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: container-image
-          path: /tmp/container-image.tar
+          name: container-image.${{github.run_id}}
+          path: /tmp/container-image.${{github.run_id}}.tar
 
 
   dockle:
@@ -100,18 +96,18 @@ jobs:
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: container-image
-          path: /tmp/container-image.tar
+          name: container-image.${{github.run_id}}
+          path: /tmp/container-image.${{github.run_id}}.tar
 
       - name: Load image
         run: |
-          docker load --input /tmp/container-image.tar
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
           docker image ls -a
 
       - name: Build Dockle report
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: ${{ inputs.image-name }}:${{ github.sha }}
+          image: ${{ inputs.image-name }}
           report-format: sarif
           failure-threshold: fatal
           exit-code: 0
@@ -125,7 +121,7 @@ jobs:
       - name: Run Dockle check
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: ${{ inputs.image-name }}:${{ github.sha }}
+          image: ${{ inputs.image-name }}
           failure-threshold: fatal
           exit-code: 1
 
@@ -138,18 +134,18 @@ jobs:
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: container-image
-          path: /tmp/container-image.tar
+          name: container-image.${{github.run_id}}
+          path: /tmp/container-image.${{github.run_id}}.tar
 
       - name: Load image
         run: |
-          docker load --input /tmp/container-image.tar
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
           docker image ls -a
 
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: '${{ inputs.image-name }}:${{ github.sha }}'
+          image-ref: '${{ inputs.image-name }}'
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'vuln,secret'
@@ -168,7 +164,7 @@ jobs:
       - name: Run Trivy Vulnerability scan
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: '${{ inputs.image-name }}:${{ github.sha }}'
+          image-ref: '${{ inputs.image-name }}'
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'vuln,secret'
@@ -185,18 +181,18 @@ jobs:
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: container-image
-          path: /tmp/container-image.tar
+          name: container-image.${{github.run_id}}
+          path: /tmp/container-image.${{github.run_id}}.tar
 
       - name: Load image
         run: |
-          docker load --input /tmp/container-image.tar
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
           docker image ls -a
 
       - name: Build Trivy License report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: '${{ inputs.image-name }}:${{ github.sha }}'
+          image-ref: '${{ inputs.image-name }}'
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'license'
@@ -233,12 +229,12 @@ jobs:
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: container-image
-          path: /tmp/container-image.tar
+          name: container-image.${{github.run_id}}
+          path: /tmp/container-image.${{github.run_id}}.tar
 
       - name: Load image
         run: |
-          docker load --input /tmp/container-image.tar
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
           docker image ls -a
 
       - name: Login to GitHub Container Registry

@@ -17,16 +17,31 @@ on:
         description: "Image name, including tag"
         required: true
         type: string 
-        default: "./Dockerfile"
 
+        
 jobs:
-  lint-dockerfile:
-    name: lint-dockerfile
-    runs-on: ubuntu-20.04
+  hadolint:
+    name: Hadolint - Dockerfile linting
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Lint Dockerfile with Hadolint
+
+      - name: Build Hadolint report
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ inputs.dockerfile-context }}/${{ inputs.dockerfile-name }}
+          failure-threshold: ignore
+          format: sarif
+          output-file: 'hadolint-report.sarif'
+
+      - name: Upload Hadolint report to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'hadolint-report.sarif'
+          category: linting
+
+      - name: Run Hadolint scan
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ${{ inputs.dockerfile-context }}/${{ inputs.dockerfile-name }}
@@ -35,26 +50,81 @@ jobs:
           format: tty
 
 
-  scan-docker-image:
-    name: scan-docker-image
-    needs: lint-dockerfile
-    runs-on: ubuntu-20.04
+  build-image:
+    runs-on: ubuntu-latest
+    needs: hadolint
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build container from Dockerfile
-        run: docker build -t ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }} ${{ inputs.dockerfile-context }}
+      - name: Build and export
+        uses: docker/build-push-action@v6
+        with:
+          tags: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          outputs: type=docker,dest=/tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
 
-      - name: Run Dockle
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+
+
+  dockle:
+    name: Dockle - Container scanning
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+
+      - name: Load image
+        run: |
+          docker load --input ${{ inputs.image-name }}.${{ github.sha }}.tar
+          docker image ls -a
+
+      - name: Build Dockle report
         uses: erzz/dockle-action@v1.4.0
         with:
           image: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
           report-format: sarif
           failure-threshold: fatal
+          exit-code: 0
+
+      - name: Upload Dockle report to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'dockle-report.sarif'
+          category: code-quality
+
+      - name: Run Dockle check
+        uses: erzz/dockle-action@v1.4.0
+        with:
+          image: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          failure-threshold: fatal
           exit-code: 1
 
-      - name: Vulnerability report generation
+      
+  trivy-vulns:
+    name: Trivy - Vulnerability scan
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+
+      - name: Load image
+        run: |
+          docker load --input ${{ inputs.image-name }}.${{ github.sha }}.tar
+          docker image ls -a
+
+      - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
@@ -67,13 +137,13 @@ jobs:
           limit-severities-for-sarif: 'false'
           output: 'trivy-vuln-results.sarif'
 
-      - name: Upload Vulnerability report to GitHub Security tab
+      - name: Upload Trivy Vulnerability report to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-vuln-results.sarif'
           category: vulnerability
 
-      - name: Vulnerability check
+      - name: Run Trivy Vulnerability scan
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
@@ -84,7 +154,24 @@ jobs:
           severity: 'CRITICAL'
           format: 'table'
 
-      - name: License report generation
+
+  trivy-license:
+    name: Trivy - License scan
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+
+      - name: Load image
+        run: |
+          docker load --input ${{ inputs.image-name }}.${{ github.sha }}.tar
+          docker image ls -a
+
+      - name: Build Trivy License report
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
@@ -97,13 +184,13 @@ jobs:
           limit-severities-for-sarif: 'false'
           output: 'trivy-license-results.sarif'
 
-      - name: Upload license report to GitHub Security tab
+      - name: Upload Trivy License report to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-license-results.sarif'
           category: license
 
-      - name: License check
+      - name: Run Trivy License scan
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
@@ -117,7 +204,7 @@ jobs:
 
   push-docker-image:
     name: push-docker-image
-    needs: scan-docker-image
+    needs: [dockle, trivy-vulns, trivy-license]
     runs-on: ubuntu-24.04
     
     steps:

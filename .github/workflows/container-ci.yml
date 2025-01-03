@@ -221,7 +221,7 @@ jobs:
 
 
   push-docker-image:
-    name: push-docker-image
+    name: Docker - Image Push to GHCR
     needs: [dockle, trivy-vulns, trivy-license]
     runs-on: ubuntu-24.04
     

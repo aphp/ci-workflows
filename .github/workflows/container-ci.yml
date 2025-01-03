@@ -81,6 +81,10 @@ jobs:
           push: false
           outputs: type=docker,dest=/tmp/container-image.tar
 
+      - name: Debug - list buildx artifacts
+        run: |
+          ls -al tmp/container-image.tar
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

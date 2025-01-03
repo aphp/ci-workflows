@@ -18,10 +18,10 @@ on:
         required: true
         type: string 
 
-        
+
 jobs:
   hadolint:
-    name: Hadolint - Dockerfile linting
+    name: Hadolint - Dockerfile Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,6 +31,8 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ${{ inputs.dockerfile-context }}/${{ inputs.dockerfile-name }}
+          no-fail: true
+          no-color: true
           failure-threshold: ignore
           format: sarif
           output-file: 'hadolint-report.sarif'
@@ -51,6 +53,7 @@ jobs:
 
 
   build-image:
+    name: Buildx - Image Build
     runs-on: ubuntu-latest
     needs: hadolint
     steps:
@@ -71,7 +74,7 @@ jobs:
 
 
   dockle:
-    name: Dockle - Container scanning
+    name: Dockle - Image Scan
     needs: build-image
     runs-on: ubuntu-latest
     steps:
@@ -109,7 +112,7 @@ jobs:
 
       
   trivy-vulns:
-    name: Trivy - Vulnerability scan
+    name: Trivy - Vulnerability Scan
     needs: build-image
     runs-on: ubuntu-latest
     steps:

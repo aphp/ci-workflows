@@ -79,7 +79,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           push: false
-          outputs: type=docker,dest=/tmp/container-image.tar ${{github.run_id}}
+          outputs: type=docker,dest=/tmp/container-image.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

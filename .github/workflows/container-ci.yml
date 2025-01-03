@@ -79,13 +79,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           push: false
-          outputs: type=docker,dest=/tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+          outputs: type=docker,dest=/tmp/container-image.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.image-name }}:${{ github.sha }}
-          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+          path: /tmp/container-image.tar
 
 
   dockle:
@@ -97,7 +97,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.image-name }}:${{ github.sha }}
-          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+          path: /tmp/container-image.tar
 
       - name: Load image
         run: |
@@ -135,7 +135,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.image-name }}:${{ github.sha }}
-          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+          path: /tmp/container-image.tar
 
       - name: Load image
         run: |
@@ -182,7 +182,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.image-name }}:${{ github.sha }}
-          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+          path: /tmp/container-image.tar
 
       - name: Load image
         run: |
@@ -230,7 +230,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.image-name }}:${{ github.sha }}
-          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
+          path: /tmp/container-image.tar
 
       - name: Load image
         run: |

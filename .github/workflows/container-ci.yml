@@ -59,7 +59,7 @@ jobs:
           scanners: 'vuln,secret,license'
           vuln-type: 'os,library'
           severity: 'CRITICAL'
-          format: 'sarif'
+          format: 'github'
           output: 'trivy-results.sarif'
       - name: Upload Trivy scan results to GitHub Security tab
         if: steps.list-changed.outputs.changed == 'true'

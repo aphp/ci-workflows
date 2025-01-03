@@ -50,7 +50,7 @@ jobs:
           report-format: sarif
           failure-threshold: fatal
           exit-code: 1
-      - name: Scan container for vulnerabilities with Trivy
+      - name: Vulnerability & Licence check
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
@@ -60,9 +60,19 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL'
           format: 'table'
-          #output: 'trivy-results.sarif'
-      - name: Upload Trivy scan results to GitHub Security tab
-        if: steps.list-changed.outputs.changed == 'true'
+      - name: Vulnerability & Licence report generation
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
+          exit-code: '0'
+          ignore-unfixed: false
+          scanners: 'vuln,secret,license'
+          vuln-type: 'os,library'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          format: 'sarif'
+          limit-severities-for-sarif: 'false'
+          output: 'trivy-results.sarif'
+      - name: Upload Vulnerability & Licence report to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'

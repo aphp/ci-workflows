@@ -34,6 +34,7 @@ jobs:
           failure-threshold: warning
           format: tty
 
+
   scan-docker-image:
     name: scan-docker-image
     needs: lint-dockerfile
@@ -41,8 +42,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Build container from Dockerfile
         run: docker build -t ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }} ${{ inputs.dockerfile-context }}
+
       - name: Run Dockle
         uses: erzz/dockle-action@v1.4.0
         with:
@@ -50,16 +53,7 @@ jobs:
           report-format: sarif
           failure-threshold: fatal
           exit-code: 1
-      - name: Vulnerability check
-        uses: aquasecurity/trivy-action@0.29.0
-        with:
-          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
-          exit-code: '1'
-          ignore-unfixed: true
-          scanners: 'vuln,secret'
-          vuln-type: 'os,library'
-          severity: 'CRITICAL'
-          format: 'table'
+
       - name: Vulnerability report generation
         uses: aquasecurity/trivy-action@0.29.0
         with:
@@ -72,22 +66,25 @@ jobs:
           format: 'sarif'
           limit-severities-for-sarif: 'false'
           output: 'trivy-vuln-results.sarif'
+
       - name: Upload Vulnerability report to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-vuln-results.sarif'
           category: vulnerability
-      - name: license check
+
+      - name: Vulnerability check
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
           exit-code: '1'
           ignore-unfixed: true
-          scanners: 'license'
+          scanners: 'vuln,secret'
           vuln-type: 'os,library'
           severity: 'CRITICAL'
           format: 'table'
-      - name: license report generation
+
+      - name: License report generation
         uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
@@ -99,11 +96,24 @@ jobs:
           format: 'sarif'
           limit-severities-for-sarif: 'false'
           output: 'trivy-license-results.sarif'
+
       - name: Upload license report to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-license-results.sarif'
           category: license
+
+      - name: License check
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
+          exit-code: '1'
+          ignore-unfixed: true
+          scanners: 'license'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
+          format: 'table'
+
 
   push-docker-image:
     name: push-docker-image

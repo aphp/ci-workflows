@@ -3,18 +3,13 @@ name: build
 on:
   workflow_call:
     inputs:
-      dockerfile-name:
-        description: "Name to the Dockerfile of your project"
+      dockerfile-path:
+        description: "Path to Dockerfile of your project"
         required: true
         type: string 
-        default: "Dockerfile"
-      dockerfile-context:
-        description: "Path to the folder holding the Dockerfile of your project"
-        required: true
-        type: string 
-        default: "."
+        default: "./Dockerfile"
       image-name:
-        description: "Image name, including tag"
+        description: "Image name"
         required: true
         type: string 
 
@@ -30,7 +25,7 @@ jobs:
       - name: Build Hadolint report
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: ${{ inputs.dockerfile-context }}/${{ inputs.dockerfile-name }}
+          dockerfile: ${{ inputs.dockerfile-path }}
           no-fail: true
           no-color: true
           failure-threshold: ignore
@@ -46,7 +41,7 @@ jobs:
       - name: Run Hadolint scan
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: ${{ inputs.dockerfile-context }}/${{ inputs.dockerfile-name }}
+          dockerfile: ${{ inputs.dockerfile-path }}
           override-info: DL3008,DL3018,DL3041,SC2046
           failure-threshold: warning
           format: tty
@@ -57,19 +52,39 @@ jobs:
     runs-on: ubuntu-latest
     needs: hadolint
     steps:
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ${{ inputs.image-name }}
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha  
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Build and export
         uses: docker/build-push-action@v6
         with:
-          tags: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          file: ${{ inputs.dockerfile-path }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: false
           outputs: type=docker,dest=/tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          name: ${{ inputs.image-name }}:${{ github.sha }}
           path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
 
 
@@ -81,7 +96,7 @@ jobs:
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          name: ${{ inputs.image-name }}:${{ github.sha }}
           path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
 
       - name: Load image
@@ -92,7 +107,7 @@ jobs:
       - name: Build Dockle report
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          image: ${{ inputs.image-name }}:${{ github.sha }}
           report-format: sarif
           failure-threshold: fatal
           exit-code: 0
@@ -106,7 +121,7 @@ jobs:
       - name: Run Dockle check
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          image: ${{ inputs.image-name }}:${{ github.sha }}
           failure-threshold: fatal
           exit-code: 1
 
@@ -119,7 +134,7 @@ jobs:
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          name: ${{ inputs.image-name }}:${{ github.sha }}
           path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
 
       - name: Load image
@@ -130,7 +145,7 @@ jobs:
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
+          image-ref: '${{ inputs.image-name }}:${{ github.sha }}'
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'vuln,secret'
@@ -149,7 +164,7 @@ jobs:
       - name: Run Trivy Vulnerability scan
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
+          image-ref: '${{ inputs.image-name }}:${{ github.sha }}'
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'vuln,secret'
@@ -166,7 +181,7 @@ jobs:
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}
+          name: ${{ inputs.image-name }}:${{ github.sha }}
           path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
 
       - name: Load image
@@ -177,7 +192,7 @@ jobs:
       - name: Build Trivy License report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
+          image-ref: '${{ inputs.image-name }}:${{ github.sha }}'
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'license'
@@ -196,7 +211,7 @@ jobs:
       - name: Run Trivy License scan
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
+          image-ref: '${{ inputs.image-name }}'
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'license'
@@ -211,43 +226,24 @@ jobs:
     runs-on: ubuntu-24.04
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
         with:
-          # list of Docker images to use as base name for tags
-          images: |
-            ghcr.io/aphp/${{ inputs.image-name }}      
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha  
+          name: ${{ inputs.image-name }}:${{ github.sha }}
+          path: /tmp/${{ inputs.image-name }}.${{ github.sha }}.tar
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-          
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Load image
+        run: |
+          docker load --input ${{ inputs.image-name }}.${{ github.sha }}.tar
+          docker image ls -a
 
-      - name: 'Login to GitHub Container Registry'
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3.3.0
         with:
           registry: ghcr.io
           username: ${{github.actor}}
           password: ${{secrets.GITHUB_TOKEN}}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: "{{defaultContext}}:${{ inputs.dockerfile-context }}"
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Push Image to GitHub Container Registry
+        run: |
+          docker push --all-tags ${{ inputs.image-name }}

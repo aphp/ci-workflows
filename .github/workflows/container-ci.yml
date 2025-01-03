@@ -51,7 +51,7 @@ jobs:
           failure-threshold: fatal
           exit-code: 1
       - name: Scan container for vulnerabilities with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'ghcr.io/aphp/${{ inputs.image-name }}:${{ github.sha }}'
           exit-code: '1'
@@ -59,7 +59,7 @@ jobs:
           scanners: 'vuln,secret,license'
           vuln-type: 'os,library'
           severity: 'CRITICAL'
-          format: 'github'
+          format: 'sarif'
           output: 'trivy-results.sarif'
       - name: Upload Trivy scan results to GitHub Security tab
         if: steps.list-changed.outputs.changed == 'true'

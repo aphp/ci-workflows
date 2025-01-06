@@ -7,7 +7,7 @@ on:
         description: "Path to Dockerfile of your project"
         required: false
         type: string 
-        default: "./Dockerfile"
+        default: "Dockerfile"
       image-name:
         description: "Image name"
         required: true
@@ -165,6 +165,10 @@ jobs:
 
       - name: Run Trivy Vulnerability scan
         uses: aquasecurity/trivy-action@0.29.0
+        # Overriding env vars from previous steps for them not to interfere with the scan
+        env:
+          TRIVY_FORMAT: 'table'
+          TRIVY_OUTPUT: ''
         with:
           image-ref: '${{ inputs.image-name }}'
           exit-code: '1'
@@ -213,6 +217,10 @@ jobs:
 
       - name: Run Trivy License scan
         uses: aquasecurity/trivy-action@0.29.0
+        # Overriding env vars from previous steps for them not to interfere with the scan
+        env:
+          TRIVY_FORMAT: 'table'
+          TRIVY_OUTPUT: ''
         with:
           image-ref: '${{ inputs.image-name }}'
           exit-code: '1'

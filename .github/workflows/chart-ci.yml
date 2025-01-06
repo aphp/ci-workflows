@@ -153,7 +153,7 @@ jobs:
           ls -al ${{ inputs.chart-dir }}/charts
 
       - name: Build Trivy Vulnerability report
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         env:
           TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
         with:
@@ -171,7 +171,7 @@ jobs:
           sarif_file: 'trivy-vuln-results.sarif' 
 
       - name: Run Trivy Vulnerability scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         env:
           TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
           # Overriding env vars from previous steps for them not to interfere with the scan

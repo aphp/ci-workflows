@@ -42,6 +42,28 @@ jobs:
           ct lint \
             --chart-dirs ${{ inputs.chart-dir }}
 
+  helm-schema:
+    needs: helm-ct-lint
+    name: Helm Schema JSON - Chart Schema Generation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate values schema json
+      uses: losisin/helm-values-schema-json-action@v1.5.3
+      with:
+        input: ${{ inputs.chart-dir }}/values.yaml
+        output: ${{ inputs.chart-dir }}/values.schema.json
+
+    - name: Cache chart dir
+      id: cache-dir
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.chart-dir }}
+        key: ${{ github.sha }}-chart
 
   kubeconform:
     name: Kubeconform - Chart Validation

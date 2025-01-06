@@ -85,6 +85,7 @@ jobs:
       - name: Run Kubeconform check
         run: |
           helm kubeconform ${{ inputs.chart-dir }} \
+            --schema-location ${{ inputs.chart-dir }}/values.schema.json \
             --output json \
             --kubernetes-version ${{ inputs.kubernetes-version }} \
             --strict \
@@ -151,8 +152,8 @@ jobs:
         env:
           TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
         with:
-          scan-type: 'rootfs'
-          scan-ref: 'rootfs-example-binary'
+          scan-type: 'config'
+          scan-ref: '${{ inputs.chart-dir }}'
           exit-code: '0'
           ignore-unfixed: false
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
@@ -173,8 +174,8 @@ jobs:
           TRIVY_FORMAT: 'table'
           TRIVY_OUTPUT: ''
         with:
-          scan-type: 'rootfs'
-          scan-ref: 'rootfs-example-binary'
+          scan-type: 'config'
+          scan-ref: '${{ inputs.chart-dir }}'
           exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL'

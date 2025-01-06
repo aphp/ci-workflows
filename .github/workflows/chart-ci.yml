@@ -239,7 +239,7 @@ jobs:
 
 
   helm-chart-releaser:
-    needs: generate-doc-schema
+    needs: helm-docs
     name: Helm CR - Chart Release
     runs-on: ubuntu-latest
     permissions:

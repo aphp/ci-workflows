@@ -147,6 +147,10 @@ jobs:
           path: ${{ inputs.chart-dir }}
           key: ${{ github.sha }}-chart
 
+      - name: DEBUG - List chart dir
+        run: |
+          ls -al ${{ inputs.chart-dir }}
+
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.28.0
         env:

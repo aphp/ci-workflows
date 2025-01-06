@@ -4,6 +4,10 @@
 This repository hosts GitHub Workflows examples to be used in APHP Projects.
 
 ## How to use
-Inside the [workflows directory](./.github/workflows/), you'll find examples for each workflows, with the corresponding README : 
-- The [Container CI Workflow](./.github/workflows/README-CONTAINERS.md/), for a CI allowing you to lint, scan and publish your containers
-- In the [Helm Chart CI Workflow](./.github/workflows/README-HELMCHARTS.md), for a CI allowing you to lint, scan and publish your Helm Charts
+You'll find the workflows alongside a dedicated README.md describing them in the [github workflows](./.github/workflows) directory.
+
+## How to contribute?
+We welcome any feedback and contributions. If you want to add your contribution to this component, you can fork this repository, open a PR with your changes, and ping a maintainer for us to have a look at it.
+
+## How to raise bugs or issues?
+You can open an Issue in the the Issue board of this project.

@@ -15,7 +15,7 @@ on:
         default: "1.24.2"
 
 
-jobs: 
+jobs:
   helm-ct-lint:
     name: Helm CT - Chart Linting
     runs-on: ubuntu-latest
@@ -37,28 +37,10 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
 
-  helm-schema:
-    needs: helm-ct-lint
-    name: Helm Schema JSON - Chart Schema Generation
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Generate values schema json
-      uses: losisin/helm-values-schema-json-action@v1.5.3
-      with:
-        input: ${{ inputs.chart-dir }}/values.yaml
-        output: ${{ inputs.chart-dir }}/values.schema.json
-
-    - name: Cache chart dir
-      id: cache-dir
-      uses: actions/cache@v4
-      with:
-        path: ${{ inputs.chart-dir }}
-        key: ${{ github.sha }}-chart
+      - name: Run ct lint
+        run: |
+          ct lint \
+            --chart-dirs ${{ inputs.chart-dir }}
 
 
   kubeconform:
@@ -205,6 +187,9 @@ jobs:
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
 
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
@@ -219,7 +204,9 @@ jobs:
 
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct install --target-branch ${{ github.event.repository.default_branch }}
+        run: ct install \
+          --target-branch ${{ github.event.repository.default_branch }} \
+          --chart-dirs ${{ inputs.chart-dir }}
 
 
   helm-docs:

@@ -1,0 +1,264 @@
+name: build
+
+on:
+  workflow_call:
+    inputs:
+      dockerfile-path:
+        description: "Path to Dockerfile of your project"
+        required: false
+        type: string 
+        default: "Dockerfile"
+      image-name:
+        description: "Image name"
+        required: true
+        type: string 
+
+
+jobs:
+  hadolint:
+    name: Hadolint - Dockerfile Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Hadolint report
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ inputs.dockerfile-path }}
+          no-fail: true
+          no-color: true
+          failure-threshold: ignore
+          format: sarif
+          output-file: 'hadolint-report.sarif'
+
+      - name: Upload Hadolint report to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'hadolint-report.sarif'
+          category: linting
+
+      - name: Run Hadolint scan
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ inputs.dockerfile-path }}
+          override-info: DL3008,DL3018,DL3041,SC2046
+          failure-threshold: warning
+          format: tty
+
+
+  build-image:
+    name: Buildx - Image Build
+    runs-on: ubuntu-latest
+    needs: hadolint
+    steps:
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ${{ inputs.image-name }}
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha  
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and export
+        uses: docker/build-push-action@v6
+        # Fixes CIS-DI-0005
+        env:
+          DOCKER_CONTENT_TRUST: '1'
+        with:
+          file: ${{ inputs.dockerfile-path }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: false
+          outputs: type=docker,dest=/tmp/container-image.${{github.run_id}}.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-image.${{github.run_id}}
+          path: /tmp/container-image.${{github.run_id}}.tar
+
+
+  dockle:
+    name: Dockle - Image Scan
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: container-image.${{github.run_id}}
+          path: /tmp
+
+      - name: Load image
+        run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
+
+      - name: Build Dockle report
+        uses: erzz/dockle-action@v1.4.0
+        with:
+          image: ${{ inputs.image-name }}
+          report-format: sarif
+          failure-threshold: fatal
+          exit-code: 0
+
+      - name: Upload Dockle report to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'dockle-report.sarif'
+          category: code-quality
+
+      - name: Run Dockle check
+        uses: erzz/dockle-action@v1.4.0
+        with:
+          image: ${{ inputs.image-name }}
+          failure-threshold: fatal
+          exit-code: 1
+
+      
+  trivy-vulns:
+    name: Trivy - Vulnerability Scan
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: container-image.${{github.run_id}}
+          path: /tmp
+
+      - name: Load image
+        run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
+
+      - name: Build Trivy Vulnerability report
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: '${{ inputs.image-name }}'
+          exit-code: '0'
+          ignore-unfixed: false
+          scanners: 'vuln,secret'
+          vuln-type: 'os,library'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          format: 'sarif'
+          limit-severities-for-sarif: 'false'
+          output: 'trivy-vuln-results.sarif'
+
+      - name: Upload Trivy Vulnerability report to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-vuln-results.sarif'
+          category: vulnerability
+
+      - name: Run Trivy Vulnerability scan
+        uses: aquasecurity/trivy-action@0.29.0
+        # Overriding env vars from previous steps for them not to interfere with the scan
+        env:
+          TRIVY_FORMAT: 'table'
+          TRIVY_OUTPUT: ''
+        with:
+          image-ref: '${{ inputs.image-name }}'
+          exit-code: '1'
+          ignore-unfixed: true
+          scanners: 'vuln,secret'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
+          format: 'table'
+
+
+  trivy-license:
+    name: Trivy - License scan
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: container-image.${{github.run_id}}
+          path: /tmp
+
+      - name: Load image
+        run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
+
+      - name: Build Trivy License report
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: '${{ inputs.image-name }}'
+          exit-code: '0'
+          ignore-unfixed: false
+          scanners: 'license'
+          vuln-type: 'os,library'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          format: 'sarif'
+          limit-severities-for-sarif: 'false'
+          output: 'trivy-license-results.sarif'
+
+      - name: Upload Trivy License report to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-license-results.sarif'
+          category: license
+
+      - name: Run Trivy License scan
+        uses: aquasecurity/trivy-action@0.29.0
+        # Overriding env vars from previous steps for them not to interfere with the scan
+        env:
+          TRIVY_FORMAT: 'table'
+          TRIVY_OUTPUT: ''
+        with:
+          image-ref: '${{ inputs.image-name }}'
+          exit-code: '1'
+          ignore-unfixed: true
+          scanners: 'license'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
+          format: 'table'
+
+
+  push-docker-image:
+    name: Docker - Image Push to GHCR
+    needs: [dockle, trivy-vulns, trivy-license]
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Download image tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: container-image.${{github.run_id}}
+          path: /tmp
+
+      - name: Load image
+        run: |
+          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
+          docker load --input /tmp/container-image.${{github.run_id}}.tar
+          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Push Image to GitHub Container Registry
+        run: |
+          docker push --all-tags ${{ inputs.image-name }}

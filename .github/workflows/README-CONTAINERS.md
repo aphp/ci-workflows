@@ -18,6 +18,10 @@ This component aims to provide with security and quality checks for container im
 - Publishing (`release` job)
   - Docker build-and-push
 
+### Reports 
+
+All the tools used are generating sarif reports that are uploaded y the workflow to your Github project's dashboard. You can consult the reports entries of your project under the `Security` tab -> `Code scanning` category.
+
 
 ## Prerequisites
 
@@ -32,21 +36,15 @@ To define a job that calls a reusable workflow, just read the [the corresponding
 ### Inputs definition
 
 This workflow's inputs are as follows : 
-- `dockerfile-name`:
-  - description: "Name to the Dockerfile of your project"
-  - required: true
+- `dockerfile-path`:
+  - description: "Path to Dockerfile of your project"
+  - required: false
   - type: string 
   - default: "Dockerfile"
-- `dockerfile-context`:
-  - description: "Path to the folder holding the Dockerfile of your project"
-  - required: true
-  - type: string 
-  - default: "."
 - `image-name`:
   - description: "Image name, including tag"
   - required: true
   - type: string 
-  - default: "./Dockerfile"
 
 ## How to contribute?
 

@@ -74,6 +74,9 @@ jobs:
 
       - name: Build and export
         uses: docker/build-push-action@v6
+        # Fixes CIS-DI-0005
+        env:
+          DOCKER_CONTENT_TRUST: '1'
         with:
           file: ${{ inputs.dockerfile-path }}
           tags: ${{ steps.meta.outputs.tags }}

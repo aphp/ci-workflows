@@ -8,19 +8,25 @@ This component aims to provide with security and quality checks for container im
 
 ### Tools
 
-- Linting (`lint-dockerfile` job)
-  - Hadolint
-  - Dockle
+- Hadolint
+  - Dockerfile linting
 
-- Security (`scan-docker-image` job)
-  - Trivy
+- Buildx
+  - Docker Image build
 
-- Publishing (`release` job)
-  - Docker build-and-push
+- Dockle
+  - Docker Image scan for misconfigs and ba patterns
+
+- Trivy
+  - Docker Image scan for vulnerabilities
+  - Docker Image scan for potential licensing issues
+
+- Docker
+  - Pushing Docker Image to the project's GHCR
 
 ### Reports 
 
-All the tools used are generating sarif reports that are uploaded y the workflow to your Github project's dashboard. You can consult the reports entries of your project under the `Security` tab -> `Code scanning` category.
+All the tools used are generating SARIF reports that are uploaded to your Github project's dashboard. You can consult the reports entries of your project under the `Security` tab -> `Code scanning` category.
 
 
 ## Prerequisites
@@ -32,6 +38,8 @@ This workflow should work out-of-the-box for public projects. Execution on priva
 ### Calling this workflow
 
 To define a job that calls a reusable workflow, just read the [the corresponding documentation](https://docs.github.com/en/actions/sharing-automations/reusing-workflows#calling-a-reusable-workflow).
+
+You can use the [redcap-containers project CIs](https://github.com/aphp/redcap-containers/tree/main/.github/workflows) as an example.
 
 ### Inputs definition
 

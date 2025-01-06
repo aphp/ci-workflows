@@ -38,7 +38,7 @@ jobs:
         uses: helm/chart-testing-action@v2.6.1
 
   helm-schema:
-    needs: helm-docs
+    needs: helm-ct-lint
     name: Helm Schema JSON - Chart Schema Generation
     runs-on: ubuntu-latest
     steps:
@@ -241,7 +241,7 @@ jobs:
 
 
   helm-chart-releaser:
-    needs: helm-schema
+    needs: helm-docs
     name: Helm CR - Chart Release
     runs-on: ubuntu-latest
     permissions:

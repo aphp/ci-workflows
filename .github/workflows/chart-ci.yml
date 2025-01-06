@@ -63,7 +63,7 @@ jobs:
 
   kubeconform:
     name: Kubeconform - Chart Validation
-    needs: helm-ct-lint
+    needs: helm-schema
     runs-on: ubuntu-latest
     steps:
       - name: Cache chart dir
@@ -93,7 +93,7 @@ jobs:
 
   polaris:
     name: Polaris - Chart Scan
-    needs: helm-ct-lint
+    needs: helm-schema
     runs-on: ubuntu-latest
     steps:
       - name: Cache chart dir
@@ -136,7 +136,7 @@ jobs:
 
   trivy:
     name: Trivy - Chart Vulnerability Scan
-    needs: helm-ct-lint
+    needs: helm-schema
     runs-on: ubuntu-latest
     steps:
       - name: Cache chart dir
@@ -163,7 +163,7 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-vuln-results.sarif'
+          sarif_file: 'trivy-vuln-results.sarif' 
 
       - name: Run Trivy Vulnerability scan
         uses: aquasecurity/trivy-action@0.28.0

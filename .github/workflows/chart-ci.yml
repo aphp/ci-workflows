@@ -40,6 +40,7 @@ jobs:
       - name: Run ct lint
         run: |
           ct lint \
+            --target-branch ${{ github.event.repository.default_branch }} \
             --chart-dirs ${{ inputs.chart-dir }}
 
   helm-schema:

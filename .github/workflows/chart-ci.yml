@@ -270,6 +270,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Cache chart dir
         id: cache-dir
         uses: actions/cache@v4

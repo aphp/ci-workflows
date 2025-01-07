@@ -311,9 +311,9 @@ jobs:
           skip_existing: true
           mark_as_latest: false
         
-      ### PROD specific steps ###
+      ### PROD release (tag) specific steps ###
       - name: Run chart-releaser - MAIN
-        if: github.ref == 'refs/heads/main'
+        if: startsWith(github.event.ref, 'refs/tags/')
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

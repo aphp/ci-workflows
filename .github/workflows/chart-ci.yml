@@ -313,10 +313,10 @@ jobs:
         
       ### PROD release (tag) specific steps ###
       - name: Run chart-releaser - MAIN
-        if: startsWith(github.event.ref, 'refs/tags/')
+        if: github.ref == 'refs/heads/main'
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
-          skip_existing: false
+          skip_existing: true
           mark_as_latest: true

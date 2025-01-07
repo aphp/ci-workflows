@@ -7,7 +7,12 @@ on:
         description: "Directory holding your Chart"
         required: true
         type: string 
-        default: "charts"
+        default: "chart"
+      chart-values:
+          description: "Chart values file that will be used for the testing and scanning steps"
+          required: false
+          type: string 
+          default: "chart/values.yaml"
       kubernetes-version:
         description: "Version of the target Kubernetes cluster the Chart will run on"
         required: false
@@ -160,6 +165,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.29.0
         env:
           TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
+          TRIVY_HELM_VALUES: ${{ inputs.kubernetes-version }}
         with:
           scan-type: 'config'
           exit-code: '0'

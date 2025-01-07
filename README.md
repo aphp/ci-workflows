@@ -108,6 +108,11 @@ This workflow's inputs are as follows :
   - required: true
   - type: string 
   - default: "chart"
+- `chart-values`:
+  - description: "Chart values file that will be used for the testing and scanning steps"
+  - required: false
+  - type: string 
+  - default: "chart/values.yaml"
 - `kubernetes-version`:
   - description: "Version of the target Kubernetes cluster the Chart will run on"
   - required: true

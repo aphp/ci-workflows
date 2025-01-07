@@ -8,14 +8,21 @@ on:
         required: true
         type: string 
         default: "chart"
+      chart-values:
+          description: "Chart values file that will be used for the testing and scanning steps"
+          required: false
+          type: string 
+          default: "chart/values.yaml"
       kubernetes-version:
         description: "Version of the target Kubernetes cluster the Chart will run on"
-        required: true
+        required: false
         type: string 
         default: "1.24.2"
 
-jobs: 
-  lint-test:
+
+jobs:
+  helm-ct-lint:
+    name: Helm CT - Chart Linting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,11 +39,91 @@ jobs:
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
 
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Run ct lint
+        run: |
+          ct lint \
+            --target-branch ${{ github.event.repository.default_branch }} \
+            --chart-dirs ${{ inputs.chart-dir }}
+
+  helm-schema:
+    needs: helm-ct-lint
+    name: Helm Schema JSON - Chart Schema Generation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate values schema json
+      uses: losisin/helm-values-schema-json-action@v1.5.3
+      with:
+        input: ${{ inputs.chart-dir }}/values.yaml
+        output: ${{ inputs.chart-dir }}/values.schema.json
+
+    - name: Cache chart dir
+      id: cache-dir
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.chart-dir }}
+        key: ${{ github.sha }}-chart
+
+  kubeconform:
+    name: Kubeconform - Chart Validation
+    needs: helm-schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache chart dir
+        id: cache-dir
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.chart-dir }}
+          key: ${{ github.sha }}-chart
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.14.4
+
       - name: Setup Helm plugins
         run: |
           helm plugin install https://github.com/jtyr/kubeconform-helm
 
-      - name: Setup Polaris
+      - name: Run Kubeconform check
+        run: |
+          helm kubeconform ${{ inputs.chart-dir }} \
+            --schema-location ${{ inputs.chart-dir }}/values.schema.json \
+            --output json \
+            --kubernetes-version ${{ inputs.kubernetes-version }} \
+            --strict \
+            --summary
+
+
+  polaris:
+    name: Polaris - Chart Scan
+    needs: helm-schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache chart dir
+        id: cache-dir
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.chart-dir }}
+          key: ${{ github.sha }}-chart
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.14.4
+
+      - name: Add Helm repositories
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+
+      - name: Run Polaris Check
         run: |
           mkdir -p .local/bin
           curl -s https://api.github.com/repos/FairwindsOps/polaris/releases/latest | \
@@ -45,10 +132,88 @@ jobs:
           tar xvz -C .local/bin polaris
           echo "$PWD/.local/bin" >> $GITHUB_PATH
 
-      - uses: actions/setup-python@v5
+      - name: Run chart-testing (polaris)
+        run: |
+          polaris audit \
+            --only-show-failed-tests \
+            --set-exit-code-below-score=80 \
+            --set-exit-code-on-danger=true \
+            --helm-chart ${{ inputs.chart-dir }} \
+            --helm-values ${{ inputs.chart-dir }}/values.yaml \
+            --format=pretty \
+            --color=true
+
+
+  trivy:
+    name: Trivy - Chart Vulnerability Scan
+    needs: helm-schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache chart dir
+        id: cache-dir
+        uses: actions/cache@v4
         with:
-          python-version: '3.x'
-          check-latest: true
+          path: ${{ inputs.chart-dir }}
+          key: ${{ github.sha }}-chart
+
+      - name: Build Trivy Vulnerability report
+        uses: aquasecurity/trivy-action@0.29.0
+        env:
+          TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
+          TRIVY_HELM_SET_FILE: ${{ inputs.chart-values }}
+        with:
+          scan-type: 'config'
+          exit-code: '0'
+          ignore-unfixed: false
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          format: 'sarif'
+          output: 'trivy-vuln-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-vuln-results.sarif' 
+
+      - name: Run Trivy Vulnerability scan
+        uses: aquasecurity/trivy-action@0.29.0
+        env:
+          TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
+          TRIVY_HELM_SET_FILE: ${{ inputs.chart-values }}
+          # Overriding env vars from previous steps for them not to interfere with the scan
+          TRIVY_FORMAT: 'table'
+          TRIVY_OUTPUT: ''
+        with:
+          scan-type: 'config'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL'
+
+
+  helm-ct-test:
+    name: Helm CT - Chart Testing
+    runs-on: ubuntu-latest
+    needs: [polaris,trivy,kubeconform]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache chart dir
+        id: cache-dir
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.chart-dir }}
+          key: ${{ github.sha }}-chart
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.14.4
+
+      - name: Add Helm repositories
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
@@ -61,97 +226,51 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run chart-testing (lint)
-        if: steps.list-changed.outputs.changed == 'true'
-        run: |
-          ct lint --target-branch ${{ github.event.repository.default_branch }}
-
-      - name: Run chart-testing (kubeconform)
-        if: steps.list-changed.outputs.changed == 'true'
-        run: |
-          helm kubeconform ./charts/${{ inputs.chart-dir }} \
-            --output json \
-            --kubernetes-version ${{ inputs.kubernetes-version }} \
-            --strict \
-            --summary
-
-      - name: Run chart-testing (polaris)
-        if: steps.list-changed.outputs.changed == 'true'
-        run: |
-          polaris audit \
-            --only-show-failed-tests \
-            --set-exit-code-below-score=80 \
-            --set-exit-code-on-danger=true \
-            --helm-chart ${{ inputs.chart-dir }} \
-            --helm-values ${{ inputs.chart-dir }}/values.yaml \
-            --format=pretty \
-            --color=true
-
-      - name: Run Trivy vulnerability scanner with rootfs command
-        if: steps.list-changed.outputs.changed == 'true'
-        uses: aquasecurity/trivy-action@0.28.0
-        env:
-          TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
-        with:
-          scan-type: 'rootfs'
-          scan-ref: 'rootfs-example-binary'
-          ignore-unfixed: true
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        if: steps.list-changed.outputs.changed == 'true'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
-
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.10.0
 
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct install --target-branch ${{ github.event.repository.default_branch }}
-      
-  generate-doc-schema:
-    needs: lint-test
+        run: |
+          ct install \
+            --target-branch ${{ github.event.repository.default_branch }} \
+            --chart-dirs ${{ inputs.chart-dir }}
+
+
+  helm-docs:
+    name: Helm Docs - Chart Documentation Generation
+    needs: helm-ct-test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-
+        
     - name: Cache chart dir
       id: cache-dir
       uses: actions/cache@v4
       with:
-        path: charts
-        key: ${{ github.sha }}-<<your-chart-name>>-chart
+        path: ${{ inputs.chart-dir }}
+        key: ${{ github.sha }}-chart
 
     - name: Helm-docs
       uses: losisin/helm-docs-github-action@v1.3.3
       with:
-        chart-search-root: ./charts/${{ inputs.chart-dir }}
+        chart-search-root: ${{ inputs.chart-dir }}
         values-file : ./values.yaml
         output-file: ./README.md
         template-files: ./README.md.gotpl
         sort-values-order: file
 
-    - name: Generate values schema json
-      uses: losisin/helm-values-schema-json-action@v1.5.3
-      with:
-        input: ./charts/${{ inputs.chart-dir }}/values.yaml
-        output: ./charts/${{ inputs.chart-dir }}/values.schema.json
 
-
-  release:
-    needs: generate-doc-schema
-    secrets: inherit
+  helm-chart-releaser:
+    needs: helm-docs
+    name: Helm CR - Chart Release
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,8 +281,8 @@ jobs:
         id: cache-dir
         uses: actions/cache@v4
         with:
-          path: charts
-          key: ${{ github.sha }}-<<your-chart-name>>-chart
+          path: ${{ inputs.chart-dir }}
+          key: ${{ github.sha }}-chart
 
       - name: Configure Git
         run: |
@@ -183,7 +302,7 @@ jobs:
       - name: Add release suffix - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
-          yq -i '.version |= . + "-dev"' charts/${{ inputs.chart-dir }}/Chart.yaml
+          yq -i '.version |= . + "-dev"' ${{ inputs.chart-dir }}/Chart.yaml
   
       - name: Run chart-releaser - DEV
         if: github.ref == 'refs/heads/dev'
@@ -194,7 +313,7 @@ jobs:
           skip_existing: true
           mark_as_latest: false
         
-      ### PROD specific steps ###
+      ### PROD release (tag) specific steps ###
       - name: Run chart-releaser - MAIN
         if: github.ref == 'refs/heads/main'
         uses: helm/chart-releaser-action@v1.6.0

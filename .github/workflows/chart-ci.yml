@@ -300,7 +300,7 @@ jobs:
       - name: Add release suffix - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
-          yq -i '.version |= . + "-dev"' charts/${{ inputs.chart-dir }}/Chart.yaml
+          yq -i '.version |= . + "-dev"' ${{ inputs.chart-dir }}/Chart.yaml
   
       - name: Run chart-releaser - DEV
         if: github.ref == 'refs/heads/dev'

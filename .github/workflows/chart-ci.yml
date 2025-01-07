@@ -160,7 +160,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.29.0
         env:
           TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
-          TRIVY_HELM_VALUES: ${{ inputs.chart-values }}
+          TRIVY_HELM_SET_FILE: ${{ inputs.chart-values }}
         with:
           scan-type: 'config'
           exit-code: '0'
@@ -178,7 +178,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.29.0
         env:
           TRIVY_HELM_KUBE_VERSION: ${{ inputs.kubernetes-version }}
-          TRIVY_HELM_VALUES: ${{ inputs.chart-values }}
+          TRIVY_HELM_SET_FILE: ${{ inputs.chart-values }}
           # Overriding env vars from previous steps for them not to interfere with the scan
           TRIVY_FORMAT: 'table'
           TRIVY_OUTPUT: ''

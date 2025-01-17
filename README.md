@@ -56,6 +56,17 @@ This workflow's inputs are as follows :
   - required: true
   - type: string
 
+#### Releases management
+
+This workflow uses a blend of several actions and steps to handle the release process.
+
+**This behavior could impact your lifecycle management practices, so be sure to read the lines below!**
+
+The releases will be handled as follow, whenever you decide to call this workflow (when tagging, pushing, etc.):
+- At build, you image will be tagged and version according to the [Docker Metadata Action](https://github.com/marketplace/actions/docker-metadata-action) rules (`build-image::Buildx - Image Build` step).
+- If the scanning steps ends successfully, your previously tagged image will be pushed in the GHCR repository of your project (`push-docker-image::Push Image to GitHub Container Registry` step).
+
+
 ## Helm Charts
 
 ### Description
@@ -118,3 +129,21 @@ This workflow's inputs are as follows :
   - required: true
   - type: string 
   - default: "1.24.2"
+
+#### Releases management
+
+This workflow uses [the Helm Cr Action](https://github.com/marketplace/actions/helm-chart-releaser) to release charts. 
+
+**This behavior could impact your lifecycle management practices, so be sure to read the lines below!**
+
+The releases will be handled as follow :
+
+- `dev` branch : 
+  - Update the Chart version Chart.yaml with the `-dev` suffix (`helm-chart-releaser::Add release suffix - DEV` step)
+  - Create the tag with the Chart version (`helm-chart-releaser::Run chart-releaser - DEV` step)
+  - Create the Release with the dev Chart archive as package (`helm-chart-releaser::Run chart-releaser - DEV` step)
+  - Update the `index.yaml` file in the `gh-page` branch of your repo to include the reference to the new dev Chart (`helm-chart-releaser::Run chart-releaser - DEV` step)
+- `main` branch : 
+  - Create the tag with the Chart version (`helm-chart-releaser::Run chart-releaser - MAIN` step)
+  - Create the Release with the Chart archive as package, and mark this release as `latest` (`helm-chart-releaser::Run chart-releaser - MAIN` step)
+  - Update the `index.yaml` file in the `gh-page` branch of your repo to include the reference to the new Chart (`helm-chart-releaser::Run chart-releaser - MAIN` step)

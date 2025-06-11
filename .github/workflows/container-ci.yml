@@ -13,10 +13,6 @@ on:
         required: true
         type: string 
 
-env:
-  IMAGE_SHA_TAG: "${GITHUB_SHA::7}"
-
-
 jobs:
   hadolint:
     name: Hadolint - Dockerfile Lint
@@ -113,10 +109,16 @@ jobs:
           docker load --input /tmp/container-image.${{github.run_id}}.tar
           echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
 
+      - name: Generate SHORT_SHA
+        id: short-sha
+        uses: benjlevesque/short-sha@v3.0
+        with:
+          length: 7
+
       - name: Build Dockle report
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: "${{ inputs.image-name }}:${{ env.IMAGE_SHA_TAG }}"
+          image: "${{ inputs.image-name }}:${{ steps.short-sha.outputs.sha }}"
           report-format: sarif
           failure-threshold: fatal
           exit-code: 0
@@ -130,7 +132,7 @@ jobs:
       - name: Run Dockle check
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: "${{ inputs.image-name }}:${{ env.IMAGE_SHA_TAG }}"
+          image: "${{ inputs.image-name }}:${{ steps.short-sha.outputs.sha }}"
           failure-threshold: fatal
           exit-code: 1
 
@@ -152,10 +154,16 @@ jobs:
           docker load --input /tmp/container-image.${{github.run_id}}.tar
           echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
 
+      - name: Generate SHORT_SHA
+        id: short-sha
+        uses: benjlevesque/short-sha@v3.0
+        with:
+          length: 7
+
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: "${{ inputs.image-name }}:${{ env.IMAGE_SHA_TAG }}"
+          image-ref: "${{ inputs.image-name }}:${{ steps.short-sha.outputs.sha }}"
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'vuln,secret'
@@ -178,7 +186,7 @@ jobs:
           TRIVY_FORMAT: 'table'
           TRIVY_OUTPUT: ''
         with:
-          image-ref: "${{ inputs.image-name }}:${{ env.IMAGE_SHA_TAG }}"
+          image-ref: "${{ inputs.image-name }}:${{ steps.short-sha.outputs.sha }}"
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'vuln,secret'
@@ -204,10 +212,16 @@ jobs:
           docker load --input /tmp/container-image.${{github.run_id}}.tar
           echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
 
+      - name: Generate SHORT_SHA
+        id: short-sha
+        uses: benjlevesque/short-sha@v3.0
+        with:
+          length: 7
+
       - name: Build Trivy License report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: "${{ inputs.image-name }}:${{ env.IMAGE_SHA_TAG }}"
+          image-ref: "${{ inputs.image-name }}:${{ steps.short-sha.outputs.sha }}"
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'license'
@@ -230,7 +244,7 @@ jobs:
           TRIVY_FORMAT: 'table'
           TRIVY_OUTPUT: ''
         with:
-          image-ref: "${{ inputs.image-name }}:${{ env.IMAGE_SHA_TAG }}"
+          image-ref: "${{ inputs.image-name }}:${{ steps.short-sha.outputs.sha }}"
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'license'

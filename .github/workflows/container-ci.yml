@@ -13,6 +13,9 @@ on:
         required: true
         type: string 
 
+env:
+  IMAGE_SHA_TAG: "${GITHUB_SHA::7}"
+
 
 jobs:
   hadolint:
@@ -55,6 +58,8 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 7
         with:
           # list of Docker images to use as base name for tags
           images: |
@@ -67,7 +72,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha  
+            type=sha
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -111,7 +116,7 @@ jobs:
       - name: Build Dockle report
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: ${{ inputs.image-name }}
+          image: "${{ inputs.image-name }}:${IMAGE_SHA_TAG}"
           report-format: sarif
           failure-threshold: fatal
           exit-code: 0
@@ -125,7 +130,7 @@ jobs:
       - name: Run Dockle check
         uses: erzz/dockle-action@v1.4.0
         with:
-          image: ${{ inputs.image-name }}
+          image: "${{ inputs.image-name }}:${IMAGE_SHA_TAG}"
           failure-threshold: fatal
           exit-code: 1
 
@@ -150,7 +155,7 @@ jobs:
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: '${{ inputs.image-name }}'
+          image-ref: "${{ inputs.image-name }}:${IMAGE_SHA_TAG}"
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'vuln,secret'
@@ -173,7 +178,7 @@ jobs:
           TRIVY_FORMAT: 'table'
           TRIVY_OUTPUT: ''
         with:
-          image-ref: '${{ inputs.image-name }}'
+          image-ref: "${{ inputs.image-name }}:${IMAGE_SHA_TAG}"
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'vuln,secret'
@@ -202,7 +207,7 @@ jobs:
       - name: Build Trivy License report
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: '${{ inputs.image-name }}'
+          image-ref: "${{ inputs.image-name }}:${IMAGE_SHA_TAG}"
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'license'
@@ -225,7 +230,7 @@ jobs:
           TRIVY_FORMAT: 'table'
           TRIVY_OUTPUT: ''
         with:
-          image-ref: '${{ inputs.image-name }}'
+          image-ref: "${{ inputs.image-name }}:${IMAGE_SHA_TAG}"
           exit-code: '1'
           ignore-unfixed: true
           scanners: 'license'

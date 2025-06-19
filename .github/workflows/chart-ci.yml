@@ -95,6 +95,7 @@ jobs:
       - name: Run Kubeconform check
         run: |
           helm kubeconform ${{ inputs.chart-dir }} \
+            --values ${{ inputs.chart-values }} \
             --schema-location ${{ inputs.chart-dir }}/values.schema.json \
             --output json \
             --kubernetes-version ${{ inputs.kubernetes-version }} \
@@ -139,7 +140,7 @@ jobs:
             --set-exit-code-below-score=80 \
             --set-exit-code-on-danger=true \
             --helm-chart ${{ inputs.chart-dir }} \
-            --helm-values ${{ inputs.chart-dir }}/values.yaml \
+            --helm-values ${{ inputs.chart-values }} \
             --format=pretty \
             --color=true
 
@@ -235,7 +236,8 @@ jobs:
         run: |
           ct install \
             --target-branch ${{ github.event.repository.default_branch }} \
-            --chart-dirs ${{ inputs.chart-dir }}
+            --chart-dirs ${{ inputs.chart-dir }} \
+            --helm-extra-args "-f ${{ inputs.chart-values }}"
 
 
   helm-docs:

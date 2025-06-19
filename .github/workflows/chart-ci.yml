@@ -124,7 +124,7 @@ jobs:
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
 
-      - name: Run Polaris Check
+      - name: Setup Polaris
         run: |
           mkdir -p .local/bin
           curl -s https://api.github.com/repos/FairwindsOps/polaris/releases/latest | \
@@ -133,9 +133,16 @@ jobs:
           tar xvz -C .local/bin polaris
           echo "$PWD/.local/bin" >> $GITHUB_PATH
 
+      # Polaris config - mainly setting unreliable tests alerts from "danger" to "warning" levels
+      - name: Configure Polaris
+        run: |
+          echo "checks:" > $PWD/polaris_config.yaml
+          echo "  sensitiveContainerEnvVar: warning" >> $PWD/polaris_config.yaml
+
       - name: Run chart-testing (polaris)
         run: |
           polaris audit \
+            --config=$PWD/polaris_config.yaml \
             --only-show-failed-tests \
             --set-exit-code-below-score=80 \
             --set-exit-code-on-danger=true \

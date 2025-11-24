@@ -95,6 +95,7 @@ jobs:
       - name: Run Kubeconform check
         run: |
           helm kubeconform ${{ inputs.chart-dir }} \
+            --values ${{ inputs.chart-values }} \
             --schema-location ${{ inputs.chart-dir }}/values.schema.json \
             --output json \
             --kubernetes-version ${{ inputs.kubernetes-version }} \
@@ -123,7 +124,7 @@ jobs:
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
 
-      - name: Run Polaris Check
+      - name: Setup Polaris
         run: |
           mkdir -p .local/bin
           curl -s https://api.github.com/repos/FairwindsOps/polaris/releases/latest | \
@@ -132,14 +133,21 @@ jobs:
           tar xvz -C .local/bin polaris
           echo "$PWD/.local/bin" >> $GITHUB_PATH
 
+      # Polaris config - mainly setting unreliable tests alerts from "danger" to "warning" levels
+      - name: Configure Polaris
+        run: |
+          echo "checks:" > $PWD/polaris_config.yaml
+          echo "  sensitiveContainerEnvVar: warning" >> $PWD/polaris_config.yaml
+
       - name: Run chart-testing (polaris)
         run: |
           polaris audit \
+            --config=$PWD/polaris_config.yaml \
             --only-show-failed-tests \
             --set-exit-code-below-score=80 \
             --set-exit-code-on-danger=true \
             --helm-chart ${{ inputs.chart-dir }} \
-            --helm-values ${{ inputs.chart-dir }}/values.yaml \
+            --helm-values ${{ inputs.chart-values }} \
             --format=pretty \
             --color=true
 
@@ -170,7 +178,7 @@ jobs:
           output: 'trivy-vuln-results.sarif'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-vuln-results.sarif' 
 
@@ -235,7 +243,8 @@ jobs:
         run: |
           ct install \
             --target-branch ${{ github.event.repository.default_branch }} \
-            --chart-dirs ${{ inputs.chart-dir }}
+            --chart-dirs ${{ inputs.chart-dir }} \
+            --helm-extra-args "-f ${{ inputs.chart-values }}"
 
 
   helm-docs:

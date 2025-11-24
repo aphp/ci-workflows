@@ -312,7 +312,7 @@ jobs:
       - name: Add release suffix - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
-          CALCULATED_SHA=.dev.$(git rev-parse --short ${{ github.sha }}) \
+          CALCULATED_SHA=-dev.$(git rev-parse --short ${{ github.sha }}) \
           yq -i '.version |= . + env(CALCULATED_SHA)' ${{ inputs.chart-dir }}/Chart.yaml
   
       - name: Run chart-releaser - DEV

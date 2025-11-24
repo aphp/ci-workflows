@@ -32,7 +32,7 @@ jobs:
           output-file: 'hadolint-report.sarif'
 
       - name: Upload Hadolint report to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'hadolint-report.sarif'
           category: linting
@@ -124,7 +124,7 @@ jobs:
           exit-code: 0
 
       - name: Upload Dockle report to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'dockle-report.sarif'
           category: code-quality
@@ -174,7 +174,7 @@ jobs:
           output: 'trivy-vuln-results.sarif'
 
       - name: Upload Trivy Vulnerability report to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-vuln-results.sarif'
           category: vulnerability
@@ -232,7 +232,7 @@ jobs:
           output: 'trivy-license-results.sarif'
 
       - name: Upload Trivy License report to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-license-results.sarif'
           category: license

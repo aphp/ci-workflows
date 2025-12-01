@@ -224,11 +224,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download chart ready for CI
+      - name: Download packaged Chart
         uses: actions/download-artifact@v4
         with:
-          name: chart-ready-for-ci
-          path: .
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.1

@@ -84,7 +84,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: packaged-chart
-          path: .
+          path: ${{ inputs.chart-dir }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.1
@@ -108,7 +108,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: packaged-chart
-          path: .
+          path: ${{ inputs.chart-dir }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.1
@@ -139,7 +139,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: packaged-chart
-          path: .
+          path: ${{ inputs.chart-dir }}
 
       - name: Setup Polaris
         run: |
@@ -177,7 +177,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: packaged-chart
-          path: .
+          path: ${{ inputs.chart-dir }}
 
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
@@ -275,11 +275,16 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download chart ready for CI
         uses: actions/download-artifact@v4
         with:
           name: chart-ready-for-ci
-          path: .
+          path: .${{ inputs.chart-dir }}
 
       - name: Install Helm
         uses: azure/setup-helm@v4.3.1

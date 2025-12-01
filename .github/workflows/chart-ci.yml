@@ -296,7 +296,7 @@ jobs:
       - name: Package Chart - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
-          CHART_VERSION="$(yq .version ./charts/helix/Chart.yaml )-dev.$(git rev-parse --short ${{ github.sha }})"
+          CHART_VERSION="$(yq .version ${{ inputs.chart-dir }}/Chart.yaml )-dev.$(git rev-parse --short ${{ github.sha }})"
 
           mkdir .cr-release-packages
           helm package ${{ inputs.chart-dir }} \
@@ -319,7 +319,7 @@ jobs:
       - name: Package Chart - MAIN
         if: github.ref == 'refs/heads/main'
         run: |
-          CHART_VERSION="$(yq .version ./charts/helix/Chart.yaml)"
+          CHART_VERSION="$(yq .version ${{ inputs.chart-dir }}/Chart.yaml)"
 
           mkdir .cr-release-packages
           helm package ${{ inputs.chart-dir }} \

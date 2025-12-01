@@ -276,11 +276,11 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-      - name: Download chart ready for CI
+      - name: Download packaged Chart
         uses: actions/download-artifact@v4
         with:
-          name: chart-ready-for-ci
-          path: .${{ inputs.chart-dir }}
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
 
       - name: Install Helm
         uses: azure/setup-helm@v4.3.1

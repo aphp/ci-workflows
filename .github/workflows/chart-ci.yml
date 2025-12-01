@@ -120,13 +120,6 @@ jobs:
           input: ${{ inputs.chart-dir }}/values.yaml
           output: ${{ inputs.chart-dir }}/values.schema.json
 
-      - name: Cache chart dir
-        id: cache-dir
-        uses: actions/cache@v4
-        with:
-          path: ${{ inputs.chart-dir }}
-          key: ${{ github.sha }}-chart
-
 
   kubeconform:
     name: Kubeconform - Chart Validation
@@ -329,13 +322,6 @@ jobs:
           output-file: ./README.md
           template-files: ./README.md.gotpl
           sort-values-order: file
-
-      - name: Cache chart dir
-        id: cache-dir
-        uses: actions/cache@v4
-        with:
-          path: ${{ inputs.chart-dir }}
-          key: ${{ github.sha }}-chart
 
 
   helm-chart-releaser:

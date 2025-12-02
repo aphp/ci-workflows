@@ -30,17 +30,17 @@ on:
       dockle-ignore:
         description: "Comma separated list of Dockle rule IDs to ignore"
         required: false
-        default: 'CIS-DI-0001,DKL-DI-0006,DKL-LI-0001'
+        default: ''
         type: string
       dockle-accept-file:
         description: "Comma separated list of filenames to accept (Dockle accept-file)"
         required: false
-        default: 'credentials.json'
+        default: ''
         type: string
       dockle-accept-key:
         description: "Comma separated list of keys to accept (Dockle accept-key)"
         required: false
-        default: 'MYSQL_PASSWD'
+        default: ''
         type: string
       trivy-ignore-vuln-ids:
         description: |

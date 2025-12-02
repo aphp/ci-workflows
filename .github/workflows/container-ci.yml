@@ -33,6 +33,9 @@ jobs:
     name: Hadolint - Dockerfile Lint
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Build Hadolint report
         uses: hadolint/hadolint-action@v3.3.0
         with:

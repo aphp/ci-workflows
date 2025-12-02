@@ -8,6 +8,11 @@ on:
         required: false
         type: string 
         default: "Dockerfile"
+      ignore_hadolint_rules:
+        description: "Comma separated list of Hadolint rules to ignore (for scan only, will still be present in the generated report)"
+        required: false
+        default: ''
+        type: string
       image-name:
         description: "Image name"
         required: true
@@ -32,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Hadolint report
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: ${{ inputs.dockerfile-path }}
           no-fail: true
@@ -51,7 +56,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ${{ inputs.dockerfile-path }}
-          override-info: DL3008,DL3018,DL3041,SC2046
+          ignore: ${{ inputs.ignore_hadolint_rules }}
           failure-threshold: warning
           format: tty
 

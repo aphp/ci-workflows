@@ -84,24 +84,25 @@ jobs:
           fi
 
           BUILD_ARGS_JSON=$(
-            jq -n -c \
+            jq -nc \
               --arg git_project "${{ github.repository }}" \
               --arg git_branch "${{ github.ref_name }}" \
               --arg git_commit_author "$(git log -1 --pretty=format:'%an')" \
               --arg git_commit_sha "${{ github.sha }}" \
-              --jsonargs extra "$EXTRA_ARGS" '
-              [
-                { "name": "GIT_PROJECT",        "value": $git_project },
-                { "name": "GIT_BRANCH",         "value": $git_branch },
-                { "name": "GIT_COMMIT_AUTHOR",  "value": $git_commit_author },
-                { "name": "GIT_COMMIT_SHA",     "value": $git_commit_sha }
-              ]
-              + ($extra // [])
-            '
+              --arg extra "$EXTRA_ARGS" '
+                [
+                  { "name": "GIT_PROJECT",       "value": $git_project },
+                  { "name": "GIT_BRANCH",        "value": $git_branch },
+                  { "name": "GIT_COMMIT_AUTHOR", "value": $git_commit_author },
+                  { "name": "GIT_COMMIT_SHA",    "value": $git_commit_sha }
+                ]
+                + ( ($extra | fromjson) // [] )
+              '
           )
 
           echo "[DEBUG] BUILD_ARGS_JSON = $BUILD_ARGS_JSON"
 
+          # Transforme en lignes "KEY=VALUE" pour docker/build-push-action
           BUILD_ARGS_LINES=$(
             jq -r '.[] | "\(.name)=\(.value)"' <<< "$BUILD_ARGS_JSON"
           )

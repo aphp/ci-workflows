@@ -92,7 +92,7 @@ jobs:
           )
   
           # Adding user-supplied default build-args
-          echo "${{ inputs.extra-build-args }}" > args.json
+          printf '%s' '${{ inputs.extra-build-args }}' | jq . > args.json
 
           # Combining default and extra build args to a single var exposed as step output, 
           # to be reused in the build step
@@ -135,7 +135,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build_args: |
-            ${{ steps.args.outputs.flags }}
+            ${{ steps.args.outputs.build-args }}
           push: false
           outputs: type=docker,dest=/tmp/container-image.${{github.run_id}}.tar
 

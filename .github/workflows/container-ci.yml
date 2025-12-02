@@ -155,13 +155,13 @@ jobs:
           build-args: |
             ${{ steps.args.outputs.build-args }}
           push: false
-          outputs: type=docker,dest=/tmp/container-image.${{github.run_id}}.tar
+          outputs: type=docker,dest=/tmp/container.image.${{ hashFiles(inputs.dockerfile-path) }}.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: container-image.${{github.run_id}}
-          path: /tmp/container-image.${{github.run_id}}.tar
+          name: container.image.${{ hashFiles(inputs.dockerfile-path) }}
+          path: /tmp/container.image.${{ hashFiles(inputs.dockerfile-path) }}.tar
 
 
   image-audit:
@@ -169,17 +169,23 @@ jobs:
     needs: image-build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: container-image.${{github.run_id}}
+          name: container.image.${{ hashFiles(inputs.dockerfile-path) }}
           path: /tmp
 
       - name: Load image
         run: |
-          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
-          docker load --input /tmp/container-image.${{github.run_id}}.tar
-          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
+          TARBALL="/tmp/container.image.${{ hashFiles(inputs.dockerfile-path) }}.tar"
+          echo "[INFO]: Importing container image from following tarball :"
+          ls -al "$TARBALL"
+          docker load --input "$TARBALL"
+          echo "[INFO]: The following images are now present in the local registry :"
+          docker image ls -a
 
       - name: Generate SHORT_SHA
         id: short-sha
@@ -216,17 +222,23 @@ jobs:
     needs: image-build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: container-image.${{github.run_id}}
+          name: container.image.${{ hashFiles(inputs.dockerfile-path) }}
           path: /tmp
 
       - name: Load image
         run: |
-          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
-          docker load --input /tmp/container-image.${{github.run_id}}.tar
-          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
+          TARBALL="/tmp/container.image.${{ hashFiles(inputs.dockerfile-path) }}.tar"
+          echo "[INFO]: Importing container image from following tarball :"
+          ls -al "$TARBALL"
+          docker load --input "$TARBALL"
+          echo "[INFO]: The following images are now present in the local registry :"
+          docker image ls -a
 
       - name: Generate SHORT_SHA
         id: short-sha
@@ -354,17 +366,23 @@ jobs:
     runs-on: ubuntu-24.04
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Download image tarball
         uses: actions/download-artifact@v4
         with:
-          name: container-image.${{github.run_id}}
+          name: container.image.${{ hashFiles(inputs.dockerfile-path) }}
           path: /tmp
 
       - name: Load image
         run: |
-          echo "[INFO]: Importing container image from following tarball : $(ls -al /tmp/container-image.${{github.run_id}}.tar)"
-          docker load --input /tmp/container-image.${{github.run_id}}.tar
-          echo "[INFO]: The following images are now present in the local registry : $(docker image ls -a)"
+          TARBALL="/tmp/container.image.${{ hashFiles(inputs.dockerfile-path) }}.tar"
+          echo "[INFO]: Importing container image from following tarball :"
+          ls -al "$TARBALL"
+          docker load --input "$TARBALL"
+          echo "[INFO]: The following images are now present in the local registry :"
+          docker image ls -a
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3.3.0

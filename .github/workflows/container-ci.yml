@@ -8,7 +8,7 @@ on:
         required: false
         type: string 
         default: "Dockerfile"
-      ignore_hadolint_rules:
+      hadolint-ignore:
         description: "Comma separated list of Hadolint rules to ignore (for scan only, will still be present in the generated report)"
         required: false
         default: ''
@@ -82,10 +82,10 @@ jobs:
           category: linting
 
       - name: Run Hadolint scan
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: ${{ inputs.dockerfile-path }}
-          ignore: ${{ inputs.ignore_hadolint_rules }}
+          ignore: ${{ inputs.hadolint-ignore }}
           failure-threshold: warning
           format: tty
 

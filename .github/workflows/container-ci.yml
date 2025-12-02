@@ -67,40 +67,51 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Get Git metadata
-        id: git_metadata
-        run: |
-          AUTHOR=$(git log -1 --pretty=format:'%an')
-          echo "author=$AUTHOR" >> $GITHUB_OUTPUT
- 
-          echo "repo=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
  
       - name: Parse build-args
         id: args
+        shell: bash
         run: |
+          set -euo pipefail
 
-          # Setup default build-args, to be exposed to all builds
-          DEFAULT_BUILD_ARGS=$(cat <<EOF
-          [
-            {"name": "GIT_PROJECT", "value": "${{ steps.git_metadata.outputs.repo }}"},
-            {"name": "GIT_BRANCH", "value": "${{ github.ref_name }}"},
-            {"name": "GIT_COMMIT_AUTHOR", "value": "${{ steps.git_metadata.outputs.author }}"},
-            {"name": "GIT_COMMIT_SHA", "value": "${{ github.sha }}"}
-          ]
-          EOF
+          EXTRA_ARGS='${{ inputs.extra-build-args }}'
+
+          if [[ -z "${EXTRA_ARGS//[[:space:]]/}" ]]; then
+            EXTRA_ARGS='[]'
+          fi
+
+          BUILD_ARGS_JSON=$(
+            jq -n -c \
+              --arg git_project "${{ github.repository }}" \
+              --arg git_branch "${{ github.ref_name }}" \
+              --arg git_commit_author "$(git log -1 --pretty=format:'%an')" \
+              --arg git_commit_sha "${{ github.sha }}" \
+
+              --argjson extra "$EXTRA_ARGS" '
+              [
+                { "name": "GIT_PROJECT",        "value": $git_project },
+                { "name": "GIT_BRANCH",         "value": $git_branch },
+                { "name": "GIT_COMMIT_AUTHOR",  "value": $git_commit_author },
+                { "name": "GIT_COMMIT_SHA",     "value": $git_commit_sha }
+              ]
+              + ($extra // [])
+            '
           )
-  
-          # Adding user-supplied default build-args
-          printf '%s' '${{ inputs.extra-build-args }}' | jq . > args.json
 
-          # Combining default and extra build args to a single var exposed as step output, 
-          # to be reused in the build step
-          BUILD_ARGS=$(jq -s 'add' <(echo "$DEFAULT_BUILD_ARGS") args.json)
+          echo "[DEBUG] BUILD_ARGS_JSON = $BUILD_ARGS_JSON"
 
-          echo -e "[INFO] Setting the following build_args for this Dockerfile build : \n $(echo "$BUILD_ARGS")"
+          BUILD_ARGS_LINES=$(
+            jq -r '.[] | "\(.name)=\(.value)"' <<< "$BUILD_ARGS_JSON"
+          )
 
-          echo "build_args=$BUILD_ARGS" >> $GITHUB_OUTPUT
+          echo "[DEBUG] BUILD_ARGS_LINES:"
+          printf '%s\n' "$BUILD_ARGS_LINES"
+
+          {
+            echo "build_args<<EOF"
+            printf '%s\n' "$BUILD_ARGS_LINES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Docker meta
         id: meta

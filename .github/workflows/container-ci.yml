@@ -188,7 +188,7 @@ jobs:
           length: 7
 
       - name: Build Dockle report
-        uses: goodwithtech/dockle-action@0.4.15
+        uses: goodwithtech/dockle-action@v0.4.15
         with:
           image: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
           format: sarif
@@ -202,7 +202,7 @@ jobs:
           category: code-quality
 
       - name: Run Dockle check
-        uses: erzz/dockle-action@v1.4.0
+        uses: goodwithtech/dockle-action@v0.4.15
         with:
           image: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
           failure-threshold: warn
@@ -263,13 +263,13 @@ jobs:
           scan-type: 'image'
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
           format: 'spdx-json'
-          output: '_manifest/spdx_2.2/image-sbom.spdx.json'
+          output: 'image-sbom.spdx.json'
           exit-code: '0'
 
       - name: Submit SBOM to GitHub Dependency Graph
         uses: advanced-security/spdx-dependency-submission-action@v0.1.1
         with:
-          filePath: "_manifest/spdx_2.2/"
+          filePath: 'image-sbom.spdx.json'
 
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.33.1

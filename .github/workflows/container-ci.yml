@@ -205,7 +205,7 @@ jobs:
         uses: goodwithtech/dockle-action@v0.4.15
         with:
           image: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
-          failure-threshold: warn
+          exit-level: warn
           exit-code: 1
           ignore: ${{ inputs.dockle-ignore }}
           accept-file: ${{ inputs.dockle-accept-file }}

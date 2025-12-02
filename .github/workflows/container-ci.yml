@@ -23,9 +23,9 @@ on:
         default: ''
         type: string
       extra-build-args:
-        description: "Extra build args as JSON array of objects [{'name':'ARG1','value':'val1'},...]"
+        description: "Extra build args as KEY=VALUE, one per line, in a YAML scalar bloc"
         required: false
-        default: '[]'
+        default: ''
         type: string
 
 jobs:
@@ -75,44 +75,19 @@ jobs:
         id: args
         shell: bash
         run: |
-          set -euo pipefail
-
-          EXTRA_ARGS='${{ inputs.extra-build-args }}'
-
-          if [[ -z "${EXTRA_ARGS//[[:space:]]/}" ]]; then
-            EXTRA_ARGS='[]'
-          fi
-
-          BUILD_ARGS_JSON=$(
-            jq -nc \
-              --arg git_project "${{ github.repository }}" \
-              --arg git_branch "${{ github.ref_name }}" \
-              --arg git_commit_author "$(git log -1 --pretty=format:'%an')" \
-              --arg git_commit_sha "${{ github.sha }}" \
-              --arg extra "$EXTRA_ARGS" '
-                [
-                  { "name": "GIT_PROJECT",       "value": $git_project },
-                  { "name": "GIT_BRANCH",        "value": $git_branch },
-                  { "name": "GIT_COMMIT_AUTHOR", "value": $git_commit_author },
-                  { "name": "GIT_COMMIT_SHA",    "value": $git_commit_sha }
-                ]
-                + ( ($extra | fromjson) // [] )
-              '
-          )
-
-          echo "[DEBUG] BUILD_ARGS_JSON = $BUILD_ARGS_JSON"
-
-          # Transforme en lignes "KEY=VALUE" pour docker/build-push-action
-          BUILD_ARGS_LINES=$(
-            jq -r '.[] | "\(.name)=\(.value)"' <<< "$BUILD_ARGS_JSON"
-          )
-
-          echo "[DEBUG] BUILD_ARGS_LINES:"
-          printf '%s\n' "$BUILD_ARGS_LINES"
-
           {
             echo "build-args<<EOF"
-            printf '%s\n' "$BUILD_ARGS_LINES"
+            echo "GIT_PROJECT=${{ github.repository }}"
+            echo "GIT_BRANCH=${{ github.ref_name }}"
+            echo "GIT_COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')"
+            echo "GIT_COMMIT_SHA=${{ github.sha }}"
+
+            extra='${{ inputs.extra-build-args }}'
+            if [ -n "${extra//[[:space:]]/}" ]; then
+              printf '%s\n' "$extra" \
+                | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'
+            fi
+
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 

@@ -275,6 +275,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
+          skip-setup-trivy: true
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'vuln,secret'
@@ -294,6 +295,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
+          skip-setup-trivy: true
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'license'

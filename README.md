@@ -46,15 +46,19 @@ You can use the [redcap-containers project CIs](https://github.com/aphp/redcap-c
 #### Inputs definition
 
 This workflow's inputs are as follows : 
-- `dockerfile-path`:
-  - description: "Path to Dockerfile of your project"
-  - required: false
-  - type: string 
-  - default: "Dockerfile"
-- `image-name`:
-  - description: "Image name, including tag"
-  - required: true
-  - type: string
+
+| Input name                 | Type   | Required | Default      | Description                                                                                                                                           |
+|---------------------------|--------|----------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `dockerfile-path`         | string | no       | `Dockerfile` | Path to the Dockerfile of your project.                                                                                                               |
+| `hadolint-ignore`         | string | no       | `""`         | Comma-separated list of Hadolint rule IDs to ignore for the **scan** (they will still appear in the generated report).                               |
+| `image-name`              | string | yes      | —            | Image name, including registry and repository (e.g. `ghcr.io/org/image`).                                                                            |
+| `image-custom-tag`        | string | no       | `""`         | Custom image tag to be added in addition to the default tags (e.g. `x86_64-ubuntu-24.04`).                                                           |
+| `extra-build-args`        | string | no       | `""`         | Extra Docker build arguments as `KEY=VALUE`, one per line, provided in a YAML scalar block.                                                          |
+| `dockle-ignore`           | string | no       | `""`         | Comma-separated list of Dockle rule IDs to ignore **for Dockle scan only** (reports remain complete).                                                |
+| `dockle-accept-file`      | string | no       | `""`         | Comma-separated list of file names to accept in Dockle (`--accept-file`).                                                                            |
+| `dockle-accept-key`       | string | no       | `""`         | Comma-separated list of keys to accept in Dockle (`--accept-key`).                                                                                   |
+| `trivy-ignore-vuln-ids`   | string | no       | `""`         | List of vulnerability IDs (e.g. `CVE-…`, `GHSA-…`, `AVD-…`) to ignore in **Trivy blocking scans only**. One per line or comma-separated.            |
+| `trivy-ignore-license-ids`| string | no       | `""`         | List of license IDs to ignore in **Trivy blocking scans only** (e.g. `GPL-3.0-only`, `MIT`). One per line or comma-separated.                        |
 
 #### Releases management
 
@@ -114,21 +118,14 @@ To define a job that calls a reusable workflow, just read the [the corresponding
 #### Inputs definition
 
 This workflow's inputs are as follows : 
-- `chart-dir`:
-  - description: "Directory holding your Chart"
-  - required: true
-  - type: string 
-  - default: "chart"
-- `chart-values`:
-  - description: "Chart values file that will be used for the testing and scanning steps"
-  - required: false
-  - type: string 
-  - default: "chart/values.yaml"
-- `kubernetes-version`:
-  - description: "Version of the target Kubernetes cluster the Chart will run on"
-  - required: true
-  - type: string 
-  - default: "1.24.2"
+
+
+| Input name           | Type   | Required | Default              | Description                                                                                             |
+|----------------------|--------|----------|----------------------|---------------------------------------------------------------------------------------------------------|
+| `chart-dir`          | string | yes      | `chart`              | Directory containing your Helm chart (expects a `Chart.yaml` file inside this directory).              |
+| `chart-values`       | string | no       | `chart/values.yaml`  | Values file used for testing and scanning steps (kubeconform, Polaris, Trivy, and `ct install`).       |
+| `kubernetes-version` | string | no       | `1.24.2`             | Target Kubernetes cluster version used for validation and security scans (kubeconform and Trivy).      |
+
 
 #### Releases management
 

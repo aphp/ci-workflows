@@ -12,8 +12,8 @@ on:
         description: "Image name"
         required: true
         type: string 
-      build-args:
-        description: "Build args as JSON array of objects [{'name':'ARG1','value':'val1'},...]"
+      extra-build-args:
+        description: "Extra build args as JSON array of objects [{'name':'ARG1','value':'val1'},...]"
         required: false
         default: '[]'
         type: string
@@ -78,9 +78,25 @@ jobs:
       - name: Parse build-args
         id: args
         run: |
-          echo "${{ inputs.build-args }}" > args.json
 
-          BUILD_ARGS=$(jq -r 'map("--build-arg \(.name)=\(.value)") | join(" ")' args.json)
+          # Setup default build-args, to be exposed to all builds
+          DEFAULT_BUILD_ARGS=$(cat <<EOF
+          [
+            {"name": "GIT_PROJECT", "value": "${{ steps.git.outputs.repo }}"},
+            {"name": "GIT_BRANCH", "value": "${{ github.ref_name }}"},
+            {"name": "GIT_COMMIT_AUTHOR", "value": "${{ steps.git.outputs.author }}"},
+            {"name": "GIT_COMMIT_SHA", "value": "${{ github.sha }}"}
+          ]
+          EOF
+          )
+  
+          # Adding user-supplied default build-args
+          echo "${{ inputs.extra-build-args }}" > args.json
+
+          # Combining default and extra build args to a single var exposed as step output, 
+          # to be reused in the build step
+          BUILD_ARGS=$(jq -s 'add' <(echo "$DEFAULT_BUILD_ARGS") input-args.json)
+
           echo "build_args=$BUILD_ARGS" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx

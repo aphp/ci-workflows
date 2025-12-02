@@ -33,11 +33,6 @@ jobs:
     name: Hadolint - Dockerfile Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Build Hadolint report
         uses: hadolint/hadolint-action@v3.3.0
         with:
@@ -90,6 +85,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Get Git metadata
         id: git_metadata

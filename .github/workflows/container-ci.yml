@@ -89,7 +89,7 @@ jobs:
               --arg git_branch "${{ github.ref_name }}" \
               --arg git_commit_author "$(git log -1 --pretty=format:'%an')" \
               --arg git_commit_sha "${{ github.sha }}" \
-              --argjson extra "$EXTRA_ARGS" '
+              --jsonargs extra "$EXTRA_ARGS" '
               [
                 { "name": "GIT_PROJECT",        "value": $git_project },
                 { "name": "GIT_BRANCH",         "value": $git_branch },

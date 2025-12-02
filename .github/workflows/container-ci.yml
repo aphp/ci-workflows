@@ -108,7 +108,7 @@ jobs:
           printf '%s\n' "$BUILD_ARGS_LINES"
 
           {
-            echo "build_args<<EOF"
+            echo "build-args<<EOF"
             printf '%s\n' "$BUILD_ARGS_LINES"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
@@ -145,7 +145,7 @@ jobs:
           file: ${{ inputs.dockerfile-path }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build_args: |
+          build-args: |
             ${{ steps.args.outputs.build-args }}
           push: false
           outputs: type=docker,dest=/tmp/container-image.${{github.run_id}}.tar

@@ -90,6 +90,7 @@ jobs:
         id: git_metadata
         run: |
           AUTHOR=$(git log -1 --pretty=format:'%an')
+          echo "author=$AUTHOR"
           echo "author=$AUTHOR" >> $GITHUB_OUTPUT
  
           echo "repo=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT

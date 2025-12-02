@@ -86,6 +86,12 @@ jobs:
             type=sha
             type=raw,value=${{ inputs.image-custom-tag }},enable=${{ inputs.image-custom-tag != '' }}
 
+      - name: Get Git metadata
+        id: git_metadata
+        run: |
+          echo "author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+          echo "repo=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+
       - name: Parse build-args
         id: args
         run: |
@@ -93,9 +99,9 @@ jobs:
           # Setup default build-args, to be exposed to all builds
           DEFAULT_BUILD_ARGS=$(cat <<EOF
           [
-            {"name": "GIT_PROJECT", "value": "${{ steps.git.outputs.repo }}"},
+            {"name": "GIT_PROJECT", "value": "${{ steps.git_metadata.outputs.repo }}"},
             {"name": "GIT_BRANCH", "value": "${{ github.ref_name }}"},
-            {"name": "GIT_COMMIT_AUTHOR", "value": "${{ steps.git.outputs.author }}"},
+            {"name": "GIT_COMMIT_AUTHOR", "value": "${{ steps.git_metadata.outputs.author }}"},
             {"name": "GIT_COMMIT_SHA", "value": "${{ github.sha }}"}
           ]
           EOF

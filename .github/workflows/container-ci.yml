@@ -86,11 +86,13 @@ jobs:
             type=sha
             type=raw,value=${{ inputs.image-custom-tag }},enable=${{ inputs.image-custom-tag != '' }}
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Get Git metadata
         id: git_metadata
         run: |
           AUTHOR=$(git log -1 --pretty=format:'%an')
-          echo "author=$AUTHOR"
           echo "author=$AUTHOR" >> $GITHUB_OUTPUT
  
           echo "repo=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT

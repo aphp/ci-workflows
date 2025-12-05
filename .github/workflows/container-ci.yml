@@ -207,6 +207,17 @@ jobs:
           sarif_file: 'dockle-report.sarif'
           category: code-quality
 
+      - name: Download & Run Dockle
+        run: |
+          curl -sSL "https://github.com/goodwithtech/dockle/releases/download/v0.4.15/dockle_0.4.15_Linux-386.tar.gz" -o dockle.tar.gz
+          tar -xzf dockle.tar.gz
+          sudo mv dockle /usr/local/bin/dockle
+
+          dockle \
+            --exit-code 1 \
+            --format json \
+            "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
+
       - name: Run Dockle check
         uses: goodwithtech/dockle-action@v0.4.15
         with:

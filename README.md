@@ -234,6 +234,10 @@ To use one of these workflows from another repository:
        branches: [ main, dev ]
      pull_request:
 
+  permissions:
+    contents: write
+    security-events: write
+
    jobs:
      container-ci:
        uses: aphp/ci-workflows/.github/workflows/<container-workflow-filename>.yml@dev
@@ -252,6 +256,10 @@ To use one of these workflows from another repository:
      push:
        branches: [ main, dev ]
      pull_request:
+
+  permissions:
+    contents: write
+    security-events: write
 
    jobs:
      helm-ci:

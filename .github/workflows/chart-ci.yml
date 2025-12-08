@@ -40,7 +40,7 @@ jobs:
             .dependencies[]
             | select(.repository != "oci://*")
             | "\(.name) \(.repository)"
-            ' Chart.yaml \
+            ' "${{ inputs.chart-dir }}/Chart.yaml" \
           | while read -r name repo; do
               helm repo add "$name" "$repo"
             done
@@ -302,7 +302,7 @@ jobs:
             .dependencies[]
             | select(.repository != "oci://*")
             | "\(.name) \(.repository)"
-            ' Chart.yaml \
+            ' "${{ inputs.chart-dir }}/Chart.yaml" \
           | while read -r name repo; do
               helm repo add "$name" "$repo"
             done

@@ -36,10 +36,14 @@ jobs:
 
       - name: Extract and add Helm repositories
         run: |
-          yq eval '.dependencies[] | "\(.name) \(.repository)"' ${{ inputs.chart-dir }}/Chart.yaml | \
-          while read -r name repo; do
-            helm repo add "$name" "$repo"
-          done
+         yq eval -r '
+            .dependencies[]
+            | select(.repository != "oci://*")
+            | "\(.name) \(.repository)"
+            ' Chart.yaml \
+          | while read -r name repo; do
+              helm repo add "$name" "$repo"
+            done
           helm repo update
 
       - name: Install chart dependencies

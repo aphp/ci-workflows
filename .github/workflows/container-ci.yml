@@ -207,26 +207,27 @@ jobs:
           sarif_file: 'dockle-report.sarif'
           category: code-quality
 
-      - name: Download & Run Dockle
+      - name: Download Dockle
         run: |
           curl -sSL "https://github.com/goodwithtech/dockle/releases/download/v0.4.15/dockle_0.4.15_Linux-386.tar.gz" -o dockle.tar.gz
           tar -xzf dockle.tar.gz
           sudo mv dockle /usr/local/bin/dockle
 
-          dockle \
-            --exit-code 1 \
-            --format json \
-            "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
+      - name: Run dockle
+        run: |
+          dockle_keys_formater(){ IFS=', ' read -r -a keys_list <<< "$VALUES" && \
+          formated_keys="" && \
+          for key in ${keys_list[@]}; do formated_keys="${formated_keys} $ARG $key" ; done && \
+          echo "$formated_keys " ;}
 
-      - name: Run Dockle check
-        uses: goodwithtech/dockle-action@v0.4.15
-        with:
-          image: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
-          exit-level: warn
-          exit-code: 1
-          ignore: ${{ inputs.dockle-ignore }}
-          accept-file: ${{ inputs.dockle-accept-file }}
-          accept-key: ${{ inputs.dockle-accept-key }}
+          dockle \
+          $(VALUES="${{ inputs.dockle-accept-key }}" ARG="--accept-key" dockle_keys_formater) \
+          $(VALUES="${{ inputs.dockle-accept-file }}" ARG="--accept-file" dockle_keys_formater) \
+          $(VALUES="${{ inputs.dockle-ignore }}" ARG="--ignore" dockle_keys_formater) \
+          --exit-code 1 \
+          --format json \
+          "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
+
 
   image-scan:
     name: Image Scan

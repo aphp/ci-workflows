@@ -316,7 +316,7 @@ jobs:
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
       - name: Run chart-releaser - DEV
-        if: github.ref == 'refs/heads/dev'
+        if: github.ref != 'refs/heads/main'
         uses: helm/chart-releaser-action@v1.7.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

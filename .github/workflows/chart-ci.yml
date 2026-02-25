@@ -310,7 +310,7 @@ jobs:
 
       ### Release steps specific to `dev` branch ###
       - name: Add release suffix - DEV
-        if: github.ref == 'refs/heads/dev'
+        if: github.ref != 'refs/heads/main'
         run: |
           VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml

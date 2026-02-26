@@ -1,3 +1,4 @@
+---
 name: Chart CI
 
 on:
@@ -18,7 +19,6 @@ on:
         required: false
         type: string
         default: "1.24.2"
-
 
 jobs:
   helm-build-chart:
@@ -131,7 +131,6 @@ jobs:
             --kubernetes-version ${{ inputs.kubernetes-version }} \
             --strict \
             --summary
-
 
   polaris:
     name: Polaris - Chart Scan

@@ -100,12 +100,14 @@ jobs:
             --target-branch ${{ github.event.repository.default_branch }} \
             --chart-dirs ${{ inputs.chart-dir }}
 
-
   kubeconform:
     name: Kubeconform - Chart Validation
     needs: helm-ct-lint
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download packaged Chart
         uses: actions/download-artifact@v4
         with:

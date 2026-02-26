@@ -54,7 +54,6 @@ jobs:
         uses: losisin/helm-values-schema-json-action@v2.4.1
         with:
           working-directory: ${{ inputs.chart-dir }} 
-          input: values.yaml
           output: values.schema.json
 
       - name: Helm-docs
@@ -275,6 +274,27 @@ jobs:
         run: |
           VERSION_SUFFIX="-snapshot.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
+
+      - name: Delete existing snapshot release
+        if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CHART_VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          RELEASE_TAG="helix-${CHART_VERSION}"
+          
+          echo "Deleting release and tag: $RELEASE_TAG (if exists)"
+          gh release delete "$RELEASE_TAG" --yes --cleanup-tag || true
+
+      - name: Release charts
+        if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
+        uses: helm/chart-releaser-action@v1.7.0
+        with:
+          skip_existing: false   # ← important, no risk  
+          mark_as_latest: false
+          charts_dir: charts
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       ### Release steps specific to `dev` branch ###
       - name: Add release suffix - DEV

@@ -199,6 +199,12 @@ Again, always check the workflow file in `.github/workflows/` for the authoritat
 
 Chart releases are handled via the **Helm CR action**, with behavior depending on the branch:
 
+- On **`feature` branch**:
+  - Chart version in `Chart.yaml` is suffixed with `-snapshot`,
+  - A Git tag is created with this snapshot version,
+  - A **Release** is created containing the snapshot chart archive,
+  - `index.yaml` in the `gh-pages` branch is updated to reference the new **snapshot** chart.
+
 - On **`dev` branch**:
   - Chart version in `Chart.yaml` is suffixed with `-dev`,
   - A Git tag is created with this dev version,
@@ -210,7 +216,7 @@ Chart releases are handled via the **Helm CR action**, with behavior depending o
   - A **Release** is created with the chart archive, marked as **latest**,
   - `index.yaml` in `gh-pages` is updated to reference the new **stable** chart.
 
-This gives you a standard separation between **dev** and **stable** releases for Helm charts.
+This gives you a standard separation between **snapshot**,**dev** and **stable** releases for Helm charts.
 
 ---
 
@@ -240,7 +246,7 @@ To use one of these workflows from another repository:
 
    jobs:
      container-ci:
-       uses: aphp/ci-workflows/.github/workflows/<container-workflow-filename>.yml@dev
+       uses: aphp/ci-workflows/.github/workflows/<container-workflow-filename>.yml@main
        with:
          image-name: ghcr.io/aphp/my-service
          dockerfile-path: Dockerfile
@@ -263,7 +269,7 @@ To use one of these workflows from another repository:
 
    jobs:
      helm-ci:
-       uses: aphp/ci-workflows/.github/workflows/<helm-workflow-filename>.yml@dev
+       uses: aphp/ci-workflows/.github/workflows/<helm-workflow-filename>.yml@main
        with:
          chart-dir: charts/mychart
          chart-values: charts/mychart/values.yaml
@@ -280,10 +286,12 @@ For a concrete example of usage, you can refer to a project CI configuration tha
 
 This repository is versioned like any other Git repository:
 
-- **Branches** such as `dev` or `main` represent the maturity of workflows.
+- **Branches** such as `feature`, `dev` or `main` represent the maturity of workflows.
 - In your consuming projects, you should:
   - Prefer **tags** (once defined) for stable usage, e.g. `@v1`,
   - Use the `dev` branch (`@dev`) when experimenting or adopting new features early.
+
+*note: `feature` name is the name of your branch created from Issue.*
 
 Examples:
 

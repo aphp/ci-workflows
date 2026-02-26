@@ -285,12 +285,6 @@ jobs:
           latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
           echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
 
-      - name: Download packaged Chart
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-chart
-          path: ${{ inputs.chart-dir }}
-
       - name: Install Helm
         uses: azure/setup-helm@v4.3.1
         env:

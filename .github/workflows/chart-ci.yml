@@ -38,7 +38,7 @@ jobs:
         run: |
          yq eval -r '
             .dependencies[]
-            | select(.repository != "oci://*")
+#            | select(.repository != "oci://*")
             | "\(.name) \(.repository)"
             ' "${{ inputs.chart-dir }}/Chart.yaml" \
           | while read -r name repo; do
@@ -281,9 +281,9 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
           # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          # git fetch --tags
-          # latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
-          # echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+          git fetch --tags
+          latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
 
       - name: Download packaged Chart
         uses: actions/download-artifact@v4
@@ -300,7 +300,7 @@ jobs:
         run: |
           yq eval -r '
             .dependencies[]
-            | select(.repository != "oci://*")
+#            | select(.repository != "oci://*")
             | "\(.name) \(.repository)"
             ' "${{ inputs.chart-dir }}/Chart.yaml" \
           | while read -r name repo; do
@@ -332,7 +332,7 @@ jobs:
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
       - name: Run chart-releaser - DEV
-
+        if: github.ref == 'refs/heads/dev'
         uses: helm/chart-releaser-action@v1.7.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

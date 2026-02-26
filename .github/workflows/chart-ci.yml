@@ -31,8 +31,12 @@ jobs:
 
       - name: Install Helm
         uses: azure/setup-helm@v4.3.1
-#        with:
-#          version: v3.14.4
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      # - name: Install Helm
+      #   uses: azure/setup-helm@v4.3.1
+      #  with:
+      #    version: v3.14.4
 
       - name: Extract and add Helm repositories
         run: |
@@ -53,8 +57,9 @@ jobs:
       - name: Generate values schema json
         uses: losisin/helm-values-schema-json-action@v2.4.1
         with:
-          input: ${{ inputs.chart-dir }}/values.yaml
-          output: ${{ inputs.chart-dir }}/values.schema.json
+          working-directory: ${{ inputs.chart-dir }} 
+          input: values.yaml
+          output: values.schema.json
 
       - name: Helm-docs
         uses: losisin/helm-docs-github-action@v1.7.1
@@ -96,19 +101,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: helm-build-chart
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Download packaged Chart
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-chart
-          path: ${{ inputs.chart-dir }}
+      # - name: Checkout
+      #   uses: actions/checkout@v4
+      #   with:
+      #     fetch-depth: 0
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v4.3.1
+      # - name: Download packaged Chart
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: packaged-chart
+      #     path: ${{ inputs.chart-dir }}
+
+      # - name: Set up Helm
+      #   uses: azure/setup-helm@v4.3.1
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
@@ -125,16 +131,16 @@ jobs:
     needs: helm-ct-lint
     runs-on: ubuntu-latest
     steps:
-      - name: Download packaged Chart
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-chart
-          path: ${{ inputs.chart-dir }}
+      # - name: Download packaged Chart
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: packaged-chart
+      #     path: ${{ inputs.chart-dir }}
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v4.3.1
-        with:
-          version: v3.14.4
+      # - name: Set up Helm
+      #   uses: azure/setup-helm@v4.3.1
+      #   with:
+      #     version: v3.14.4
 
       - name: Setup Helm plugins
         run: |
@@ -155,11 +161,11 @@ jobs:
     needs: helm-ct-lint
     runs-on: ubuntu-latest
     steps:
-      - name: Download packaged Chart
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-chart
-          path: ${{ inputs.chart-dir }}
+      # - name: Download packaged Chart
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: packaged-chart
+      #     path: ${{ inputs.chart-dir }}
 
       - name: Setup Polaris
         run: |
@@ -193,11 +199,11 @@ jobs:
     needs: helm-ct-lint
     runs-on: ubuntu-latest
     steps:
-      - name: Download packaged Chart
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-chart
-          path: ${{ inputs.chart-dir }}
+      # - name: Download packaged Chart
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: packaged-chart
+      #     path: ${{ inputs.chart-dir }}
 
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
@@ -239,24 +245,24 @@ jobs:
       - polaris 
       - trivy
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      # - name: Checkout
+      #   uses: actions/checkout@v4
+      #   with:
+      #     fetch-depth: 0
 
-      - name: Download packaged Chart
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-chart
-          path: ${{ inputs.chart-dir }}
+      # - name: Download packaged Chart
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: packaged-chart
+      #     path: ${{ inputs.chart-dir }}
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v4.3.1
-        with:
-          version: v3.14.4
+      # - name: Set up Helm
+      #   uses: azure/setup-helm@v4.3.1
+      #   with:
+      #     version: v3.14.4
 
-      - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.6.1
+      # - name: Set up chart-testing
+      #   uses: helm/chart-testing-action@v2.6.1
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -286,10 +292,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      # - name: Checkout
+      #   uses: actions/checkout@v4
+      #   with:
+      #     fetch-depth: 0
 
       - name: Configure Git
         run: |
@@ -301,16 +307,16 @@ jobs:
           latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
           echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
 
-      - name: Download packaged Chart
-        uses: actions/download-artifact@v4
-        with:
-          name: packaged-chart
-          path: ${{ inputs.chart-dir }}
+      # - name: Download packaged Chart
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: packaged-chart
+      #     path: ${{ inputs.chart-dir }}
 
-      - name: Install Helm
-        uses: azure/setup-helm@v4.3.1
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      # - name: Install Helm
+      #   uses: azure/setup-helm@v4.3.1
+      #   env:
+      #     GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Extract and add Helm repositories
         run: |

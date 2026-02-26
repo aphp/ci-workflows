@@ -38,7 +38,6 @@ jobs:
         run: |
          yq eval -r '
             .dependencies[]
-#            | select(.repository != "oci://*")
             | "\(.name) \(.repository)"
             ' "${{ inputs.chart-dir }}/Chart.yaml" \
           | while read -r name repo; do
@@ -300,7 +299,6 @@ jobs:
         run: |
           yq eval -r '
             .dependencies[]
-#            | select(.repository != "oci://*")
             | "\(.name) \(.repository)"
             ' "${{ inputs.chart-dir }}/Chart.yaml" \
           | while read -r name repo; do

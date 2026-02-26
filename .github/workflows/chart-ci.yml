@@ -330,7 +330,7 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
-          skip_existing: false
+          skip_existing: true
           mark_as_latest: false
 
       ### Release steps 

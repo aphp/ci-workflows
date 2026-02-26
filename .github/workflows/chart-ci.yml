@@ -321,8 +321,20 @@ jobs:
           VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
+
+      - name: Run chart-releaser - DEV or SNAPSHOT
+        if: github.ref != 'refs/heads/main'
+        uses: helm/chart-releaser-action@v1.7.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          skip_existing: false
+          mark_as_latest: false
+          charts_dir: ${{ inputs.chart-dir }}
+
       ### Release steps 
       - name: Run chart-releaser
+        if: github.ref == 'refs/heads/main'
         uses: helm/chart-releaser-action@v1.7.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

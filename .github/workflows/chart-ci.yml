@@ -316,7 +316,6 @@ jobs:
         run: |
           VERSION_SUFFIX="-snapshot.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
-          cat ${{ inputs.chart-dir }}/Chart.yaml
 
       ### Release steps specific to `dev` branch ###
       - name: Add release suffix - DEV
@@ -333,7 +332,6 @@ jobs:
         with:
           skip_existing: false
           mark_as_latest: false
-          charts_dir: ${{ inputs.chart-dir }}
 
       ### Release steps 
       - name: Run chart-releaser
@@ -344,4 +342,3 @@ jobs:
         with:
           skip_existing: true
           mark_as_latest: true
-          charts_dir: ${{ inputs.chart-dir }}

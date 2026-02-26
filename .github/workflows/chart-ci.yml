@@ -64,8 +64,6 @@ jobs:
           output-file: ${{ inputs.chart-dir }}/README.md
           template-files: ${{ inputs.chart-dir }}/README.md.gotpl
           sort-values-order: file
-
-
 ####
 
       ### Release steps specific to `feature` branch ###
@@ -83,8 +81,6 @@ jobs:
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
 ####
-
-
 
       - name: Upload packaged Chart
         uses: actions/upload-artifact@v6

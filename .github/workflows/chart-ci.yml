@@ -290,7 +290,7 @@ jobs:
         if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
         uses: helm/chart-releaser-action@v1.7.0
         with:
-          skip_existing: false   # ← important, no risk  
+          skip_existing: true 
           mark_as_latest: false
           charts_dir: charts
         env:

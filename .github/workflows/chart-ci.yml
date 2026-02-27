@@ -324,6 +324,8 @@ jobs:
             .cr-release-packages/*.tgz \
             --title "$TAG" \
             --notes "Version from ${{ github.ref_name }}"
+          # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
+          echo "latest_tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Update index.yaml on gh-pages
         env:
@@ -341,19 +343,8 @@ jobs:
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge .cr-index/index.yaml
 
-          # # Merge Index and push to gh-pages
-          # cr index \
-          #   --git-repo ${{ github.event.repository.name }} \
-          #   --push \
-          #   --token ${{ secrets.GITHUB_TOKEN }}
-
-          # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          git fetch --tags
-          latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
-          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
-
       - name: Run chart-releaser - dev and feature branches
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@v1.6.0
         if: github.ref != 'refs/heads/main'
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -365,7 +356,7 @@ jobs:
           mark_as_latest: false
 
       - name: Run chart-releaser - main branch
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@v1.6.0
         if: github.ref == 'refs/heads/main'
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

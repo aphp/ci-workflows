@@ -364,8 +364,6 @@ jobs:
         run: |
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           TAG="helix-${VERSION}"
-          git tag "$TAG"
-          git push origin "$TAG"
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
             --prerelease \

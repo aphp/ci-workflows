@@ -358,4 +358,3 @@ jobs:
           packages_with_index: true
           package-path: ${{ inputs.chart-dir }}
           token: ${{ secrets.GITHUB_TOKEN }}
-

@@ -274,38 +274,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # - name: Configure Git
-      #   run: |
-      #     git config user.name "$GITHUB_ACTOR"
-      #     git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      #     # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-      #     git fetch --tags
-      #     latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
-      #     echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
-
-      # - name: Download packaged Chart
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: packaged-chart
-      #     path: ${{ inputs.chart-dir }}
-
-      # - name: Install Helm
-      #   uses: azure/setup-helm@v4.3.1
-      #   env:
-      #     GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-      # - name: Extract and add Helm repositories
-      #   run: |
-      #     yq eval -r '
-      #       .dependencies[]
-      #       | "\(.name) \(.repository)"
-      #       ' "${{ inputs.chart-dir }}/Chart.yaml" \
-      #     | while read -r name repo; do
-      #         helm repo add "$name" "$repo"
-      #       done
-      #     helm repo update
-
       # ### Release steps specific to `feature` branch ###
       - name: Add release suffix - SNAPSHOT
         if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
@@ -313,40 +281,12 @@ jobs:
           VERSION_SUFFIX="-snapshot.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
-      # - name: Run chart-releaser - SNAPSHOT
-      #   if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
-      #   uses: helm/chart-releaser-action@v1.7.0
-      #   env:
-      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      #   with:
-      #     skip_existing: true
-      #     mark_as_latest: false
-
       ### Release steps specific to `dev` branch ###
       - name: Add release suffix - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
           VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
-
-      # - name: Run chart-releaser - DEV
-      #   if: github.ref == 'refs/heads/dev'
-      #   uses: helm/chart-releaser-action@v1.7.0
-      #   env:
-      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      #   with:
-      #     skip_existing: true
-      #     mark_as_latest: false
-
-      # ### Release steps specific to `main` branch ###
-      # - name: Run chart-releaser - MAIN
-      #   if: github.ref == 'refs/heads/main'
-      #   uses: helm/chart-releaser-action@v1.7.0
-      #   env:
-      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      #   with:
-      #     skip_existing: true
-      #     mark_as_latest: true
 
       - name: Install chart-releaser
         run: |
@@ -358,7 +298,9 @@ jobs:
         run: |
           helm package ${{ inputs.chart-dir }} -d .cr-release-packages/
 
+      # ### Release steps specific to `feature` or `dev` branch ###
       - name: Create GitHub pre-release + tag
+        if: github.ref != 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -367,6 +309,19 @@ jobs:
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
             --prerelease \
+            --title "$TAG" \
+            --notes "Version from ${{ github.ref_name }}"
+
+      # ### Release steps specific to `main` branch ###
+      - name: Create GitHub release + tag
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          TAG="helix-${VERSION}"
+          gh release create "$TAG" \
+            .cr-release-packages/*.tgz \
             --title "$TAG" \
             --notes "Version from ${{ github.ref_name }}"
 

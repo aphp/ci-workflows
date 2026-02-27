@@ -279,20 +279,20 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      # - name: Checkout
+      #   uses: actions/checkout@v4
+      #   with:
+      #     fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      # - name: Configure Git
+      #   run: |
+      #     git config user.name "$GITHUB_ACTOR"
+      #     git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-          # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          git fetch --tags
-          latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
-          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+      #     # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
+      #     git fetch --tags
+      #     latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
+      #     echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
 
       # - name: Download packaged Chart
       #   uses: actions/download-artifact@v4
@@ -300,24 +300,24 @@ jobs:
       #     name: packaged-chart
       #     path: ${{ inputs.chart-dir }}
 
-      - name: Install Helm
-        uses: azure/setup-helm@v4.3.1
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          version: v3.14.4
+      # - name: Install Helm
+      #   uses: azure/setup-helm@v4.3.1
+      #   env:
+      #     GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      #   with:
+      #     version: v3.14.4
 
-      - name: Extract and add Helm repositories
-        run: |
-          yq eval -r '
-            .dependencies[]
-            | select(.repository != "oci://*")
-            | "\(.name) \(.repository)"
-            ' "${{ inputs.chart-dir }}/Chart.yaml" \
-          | while read -r name repo; do
-              helm repo add "$name" "$repo"
-            done
-          helm repo update
+      # - name: Extract and add Helm repositories
+      #   run: |
+      #     yq eval -r '
+      #       .dependencies[]
+      #       | select(.repository != "oci://*")
+      #       | "\(.name) \(.repository)"
+      #       ' "${{ inputs.chart-dir }}/Chart.yaml" \
+      #     | while read -r name repo; do
+      #         helm repo add "$name" "$repo"
+      #       done
+      #     helm repo update
 
       ### Release steps specific to `feature` branch ###
       ### Need to change the version in Chart.xml for CR ###

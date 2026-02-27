@@ -1,4 +1,3 @@
----
 name: Chart CI
 
 on:
@@ -30,22 +29,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      ### Release steps specific to `feature` branch ###
-      ### Need to change the version in Chart.xml for CR ###
-      - name: Add release suffix - DEV
-        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev'
-        run: |
-          VERSION_SUFFIX="-snapshot.$(git rev-parse --short ${{ github.sha }})" \
-          yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
-
-      ### Release steps specific to `dev` branch ###
-      ### Need to change the version in Chart.xml for CR ###
-      - name: Add release suffix - DEV
-        if: github.ref == 'refs/heads/dev'
-        run: |
-          VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
-          yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
-
       - name: Install Helm
         uses: azure/setup-helm@v4.3.1
         with:
@@ -55,7 +38,6 @@ jobs:
         run: |
          yq eval -r '
             .dependencies[]
-            | select(.repository != "oci://*")
             | "\(.name) \(.repository)"
             ' "${{ inputs.chart-dir }}/Chart.yaml" \
           | while read -r name repo; do
@@ -68,13 +50,13 @@ jobs:
           helm dependency build ${{ inputs.chart-dir }}
 
       - name: Generate values schema json
-        uses: losisin/helm-values-schema-json-action@v2.4.1
+        uses: losisin/helm-values-schema-json-action@v1.5.3
         with:
-          working-directory: ${{ inputs.chart-dir }} 
-          output: values.schema.json
+          input: ${{ inputs.chart-dir }}/values.yaml
+          output: ${{ inputs.chart-dir }}/values.schema.json
 
       - name: Helm-docs
-        uses: losisin/helm-docs-github-action@v1.7.1
+        uses: losisin/helm-docs-github-action@v1.3.3
         with:
           chart-search-root: ${{ inputs.chart-dir }}
           values-file: ${{ inputs.chart-dir }}/values.yaml
@@ -82,35 +64,33 @@ jobs:
           template-files: ${{ inputs.chart-dir }}/README.md.gotpl
           sort-values-order: file
 
-      # - name: Upload packaged Chart
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: packaged-chart
-      #     path: ${{ inputs.chart-dir }}
-      #     if-no-files-found: error
-      #     retention-days: 1
+      - name: Upload packaged Chart
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
+          if-no-files-found: error
+          retention-days: 1
 
 
-  # # helm-ct-lint:
-  # #   name: Helm CT - Chart Linting
-  # #   runs-on: ubuntu-latest
-  # #   needs: helm-build-chart
-  # #   steps:
-  # #     - name: Checkout
-  # #       uses: actions/checkout@v4
-  # #       with:
-  # #         fetch-depth: 0
+  helm-ct-lint:
+    name: Helm CT - Chart Linting
+    runs-on: ubuntu-latest
+    needs: helm-build-chart
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  # #     - name: Download packaged Chart
-  # #       uses: actions/download-artifact@v4
-  # #       with:
-  # #         name: packaged-chart
-  # #         path: ${{ inputs.chart-dir }}
+      - name: Download packaged Chart
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
 
-  #     - name: Set up Helm
-  #       uses: azure/setup-helm@v4.3.1
-  #       with:
-  #         version: v3.14.4
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.1
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
@@ -121,21 +101,22 @@ jobs:
             --target-branch ${{ github.event.repository.default_branch }} \
             --chart-dirs ${{ inputs.chart-dir }}
 
-  # kubeconform:
-  #   name: Kubeconform - Chart Validation
-  #   needs: helm-ct-lint
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download packaged Chart
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: packaged-chart
-  #         path: ${{ inputs.chart-dir }}
 
-  #     - name: Set up Helm
-  #       uses: azure/setup-helm@v4.3.1
-  #       with:
-  #         version: v3.14.4
+  kubeconform:
+    name: Kubeconform - Chart Validation
+    needs: helm-ct-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packaged Chart
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.1
+        with:
+          version: v3.14.4
 
       - name: Setup Helm plugins
         run: |
@@ -151,16 +132,17 @@ jobs:
             --strict \
             --summary
 
-  # polaris:
-  #   name: Polaris - Chart Scan
-  #   needs: helm-ct-lint
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download packaged Chart
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: packaged-chart
-  #         path: ${{ inputs.chart-dir }}
+
+  polaris:
+    name: Polaris - Chart Scan
+    needs: helm-ct-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packaged Chart
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
 
       - name: Setup Polaris
         run: |
@@ -189,16 +171,16 @@ jobs:
             --color=true
 
 
-  # trivy:
-  #   name: Trivy - Chart Vulnerability Scan
-  #   needs: helm-ct-lint
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Download packaged Chart
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: packaged-chart
-  #         path: ${{ inputs.chart-dir }}
+  trivy:
+    name: Trivy - Chart Vulnerability Scan
+    needs: helm-ct-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packaged Chart
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
 
       - name: Build Trivy Vulnerability report
         uses: aquasecurity/trivy-action@0.29.0
@@ -232,32 +214,32 @@ jobs:
           severity: 'CRITICAL'
 
 
-  # helm-ct-test:
-  #   name: Helm CT - Chart Testing
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - kubeconform
-  #     - polaris 
-  #     - trivy
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+  helm-ct-test:
+    name: Helm CT - Chart Testing
+    runs-on: ubuntu-latest
+    needs:
+      - kubeconform
+      - polaris 
+      - trivy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  #     - name: Download packaged Chart
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: packaged-chart
-  #         path: ${{ inputs.chart-dir }}
+      - name: Download packaged Chart
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-chart
+          path: ${{ inputs.chart-dir }}
 
-  #     - name: Set up Helm
-  #       uses: azure/setup-helm@v4.3.1
-  #       with:
-  #         version: v3.14.4
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.1
+        with:
+          version: v3.14.4
 
-  #     - name: Set up chart-testing
-  #       uses: helm/chart-testing-action@v2.6.1
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -279,27 +261,28 @@ jobs:
             --chart-dirs ${{ inputs.chart-dir }} \
             --helm-extra-args "-f ${{ inputs.chart-values }}"
 
-  # helm-chart-releaser:
-  #   needs: helm-ct-test
-  #   name: Helm CR - Chart Release
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-      #   with:
-      #     fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+  helm-chart-releaser:
+    needs: helm-ct-test
+    name: Helm CR - Chart Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-          # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          git fetch --tags
-          latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
-          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+      # - name: Configure Git
+      #   run: |
+      #     git config user.name "$GITHUB_ACTOR"
+      #     git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      #     # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
+      #     git fetch --tags
+      #     latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
+      #     echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
 
       # - name: Download packaged Chart
       #   uses: actions/download-artifact@v4
@@ -311,27 +294,99 @@ jobs:
       #   uses: azure/setup-helm@v4.3.1
       #   env:
       #     GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      #   with:
-      #     version: v3.14.4
 
-      ### Release steps (Common)
-      - name: Run chart-releaser
-        if: github.ref != 'refs/heads/main'
-        uses: helm/chart-releaser-action@v1.6.0
+      # - name: Extract and add Helm repositories
+      #   run: |
+      #     yq eval -r '
+      #       .dependencies[]
+      #       | "\(.name) \(.repository)"
+      #       ' "${{ inputs.chart-dir }}/Chart.yaml" \
+      #     | while read -r name repo; do
+      #         helm repo add "$name" "$repo"
+      #       done
+      #     helm repo update
+
+      # ### Release steps specific to `feature` branch ###
+      # - name: Add release suffix - SNAPSHOT
+      #   if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
+      #   run: |
+      #     VERSION_SUFFIX="-snapshot.$(git rev-parse --short ${{ github.sha }})" \
+      #     yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
+
+      - name: Run chart-releaser - SNAPSHOT
+        if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
+        uses: helm/chart-releaser-action@v1.7.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
           skip_existing: true
           mark_as_latest: false
 
-      ### Release steps specific to `main` branch ###
-      ### Only release ;) ###
-      ### Release steps (Common)
-      - name: Run chart-releaser
-        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev'
-        uses: helm/chart-releaser-action@v1.6.0
+      ### Release steps specific to `dev` branch ###
+      - name: Add release suffix - DEV
+        if: github.ref == 'refs/heads/dev'
+        run: |
+          VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
+          yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
+
+      # - name: Run chart-releaser - DEV
+      #   if: github.ref == 'refs/heads/dev'
+      #   uses: helm/chart-releaser-action@v1.7.0
+      #   env:
+      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      #   with:
+      #     skip_existing: true
+      #     mark_as_latest: false
+
+      # ### Release steps specific to `main` branch ###
+      # - name: Run chart-releaser - MAIN
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: helm/chart-releaser-action@v1.7.0
+      #   env:
+      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      #   with:
+      #     skip_existing: true
+      #     mark_as_latest: true
+
+      - name: Install chart-releaser
+        run: |
+          curl -sSLo cr.tar.gz https://github.com/helm/chart-releaser/releases/download/v1.7.0/chart-releaser_1.7.0_linux_amd64.tar.gz
+          tar -xzf cr.tar.gz
+          sudo mv cr /usr/local/bin/cr
+
+      - name: Package chart
+        run: |
+          helm package ${{ inputs.chart-dir }} -d .cr-release-packages/
+
+      - name: Create GitHub pre-release + tag
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          skip_existing: true
-          mark_as_latest: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          TAG="helix-${VERSION}"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            .cr-release-packages/*.tgz \
+            --prerelease \
+            --title "$TAG" \
+            --notes "Version from ${{ github.ref_name }}"
+
+      - name: Update index.yaml on gh-pages
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Récupère le gh-pages existant
+          git fetch origin gh-pages
+          mkdir -p .cr-index
+          git show origin/gh-pages:index.yaml > .cr-index/index.yaml 2>/dev/null || echo "apiVersion: v1\nentries: {}" > .cr-index/index.yaml
+
+          # Regénère l'index en mergant avec l'existant
+          cr index \
+            --owner ${{ github.repository_owner }} \
+            --git-repo ${{ github.event.repository.name }} \
+            --packages-with-index \
+            --index-path .cr-index/index.yaml \
+            --package-path .cr-release-packages/ \
+            --push \
+            --token ${{ secrets.GITHUB_TOKEN }}

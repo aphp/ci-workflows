@@ -334,7 +334,8 @@ jobs:
         with:
           skip_existing: true
           mark_as_latest: false
-
+          packages_with_index: true
+          
       ### Release steps specific to `main` branch ###
       - name: Run chart-releaser - MAIN
         if: github.ref == 'refs/heads/main'

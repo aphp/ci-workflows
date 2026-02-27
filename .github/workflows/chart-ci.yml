@@ -337,7 +337,7 @@ jobs:
           mkdir -p .cr-index
           git show origin/gh-pages:index.yaml > .cr-index/index.yaml 2>/dev/null || echo "apiVersion: v1\nentries: {}" > .cr-index/index.yaml
 
-          helm repo index .cr-index/index.yaml \
+          helm repo index .cr-index \
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge .cr-index/index.yaml
 
@@ -345,8 +345,6 @@ jobs:
           cr index \
             --owner ${{ github.repository_owner }} \
             --git-repo ${{ github.event.repository.name }} \
-            --packages-with-index \
             --index-path .cr-index/index.yaml \
-            --package-path .cr-release-packages/ \
             --push \
             --token ${{ secrets.GITHUB_TOKEN }}

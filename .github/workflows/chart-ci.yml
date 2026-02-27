@@ -319,47 +319,43 @@ jobs:
             done
           helm repo update
 
-
       ### Release steps specific to `feature` branch ###
+      ### Need to change the version in Chart.xml for CR ###
       - name: Add release suffix - DEV
         if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev'
         run: |
           VERSION_SUFFIX="-snapshot.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
-      - name: Run chart-releaser - DEV
-        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev'
-        uses: helm/chart-releaser-action@v1.7.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          skip_existing: true
-          mark_as_latest: false
-          packages_with_index: true
-
       ### Release steps specific to `dev` branch ###
+      ### Need to change the version in Chart.xml for CR ###
       - name: Add release suffix - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
           VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
-      - name: Run chart-releaser - DEV
-        if: github.ref == 'refs/heads/dev'
+      ### Release steps (Common)
+      - name: Run chart-releaser
+        if: github.ref != 'refs/heads/main'
         uses: helm/chart-releaser-action@v1.7.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
           skip_existing: true
           mark_as_latest: false
           packages_with_index: true
+          package-path: ${{ inputs.chart-dir }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       ### Release steps specific to `main` branch ###
-      - name: Run chart-releaser - MAIN
-        if: github.ref == 'refs/heads/main'
+      ### Only relaese ;) ###
+      ### Release steps (Common)
+      - name: Run chart-releaser
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev'
         uses: helm/chart-releaser-action@v1.7.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
           skip_existing: true
           mark_as_latest: true
+          packages_with_index: true
+          package-path: ${{ inputs.chart-dir }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+

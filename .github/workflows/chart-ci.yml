@@ -300,24 +300,24 @@ jobs:
       #     name: packaged-chart
       #     path: ${{ inputs.chart-dir }}
 
-      # - name: Install Helm
-      #   uses: azure/setup-helm@v4.3.1
-      #   env:
-      #     GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      #   with:
-      #     version: v3.14.4
+      - name: Install Helm
+        uses: azure/setup-helm@v4.3.1
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          version: v3.14.4
 
-      # - name: Extract and add Helm repositories
-      #   run: |
-      #     yq eval -r '
-      #       .dependencies[]
-      #       | select(.repository != "oci://*")
-      #       | "\(.name) \(.repository)"
-      #       ' "${{ inputs.chart-dir }}/Chart.yaml" \
-      #     | while read -r name repo; do
-      #         helm repo add "$name" "$repo"
-      #       done
-      #     helm repo update
+      - name: Extract and add Helm repositories
+        run: |
+          yq eval -r '
+            .dependencies[]
+            | select(.repository != "oci://*")
+            | "\(.name) \(.repository)"
+            ' "${{ inputs.chart-dir }}/Chart.yaml" \
+          | while read -r name repo; do
+              helm repo add "$name" "$repo"
+            done
+          helm repo update
 
       ### Release steps specific to `feature` branch ###
       ### Need to change the version in Chart.xml for CR ###

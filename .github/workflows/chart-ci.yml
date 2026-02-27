@@ -347,7 +347,12 @@ jobs:
           #   --push \
           #   --token ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run chart-releaser
+          # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
+          git fetch --tags
+          latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Run chart-releaser - dev and feature branches
         uses: helm/chart-releaser-action@v1.7.0
         if: github.ref != 'refs/heads/main'
         env:
@@ -359,7 +364,7 @@ jobs:
           skip_packaging: true
           mark_as_latest: false
 
-      - name: Run chart-releaser
+      - name: Run chart-releaser - main branch
         uses: helm/chart-releaser-action@v1.7.0
         if: github.ref == 'refs/heads/main'
         env:

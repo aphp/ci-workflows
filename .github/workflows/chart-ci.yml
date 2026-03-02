@@ -298,20 +298,23 @@ jobs:
       - name: Prepare release variables
         id: prepare-release
         run: |
+
+          pwd
+
           REF="${{ github.ref }}"          # ex. refs/heads/main
           BRANCH="${REF#refs/heads/}"      # remove « refs/heads/ »
 
           git fetch origin gh-pages
+          pwd
           name=$(yq e '.entries | keys | .[0]' index.yaml)
 
           git fetch origin "$BRANCH"
+          pwd
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           
-          # lowercase the tag name to avoid issues with gh cli
-          tag_tmp="${name}-${VERSION}" 
-          TAG=${tag_tmp,,}
+          TAG_NAME="${name}-${VERSION}" 
 
-          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       # ### Release steps specific to `feature` or `dev` branch ###
@@ -320,10 +323,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ steps.prepare-release.outputs.TAG }}" \
+          gh release create "${{ steps.prepare-release.outputs.TAG_NAME }}" \
             .cr-release-packages/*.tgz \
             --prerelease \
-            --title "${{ steps.prepare-release.outputs.TAG }}" \
+            --title "${{ steps.prepare-release.outputs.TAG_NAME }}" \
             --notes "Version from ${{ github.ref_name }}"
 
       # ### Release steps specific to `main` branch ###
@@ -332,9 +335,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ steps.prepare-release.outputs.TAG }}" \
+          gh release create "${{ steps.prepare-release.outputs.TAG_NAME }}" \
             .cr-release-packages/*.tgz \
-            --title "${{ steps.prepare-release.outputs.TAG }}" \
+            --title "${{ steps.prepare-release.outputs.TAG_NAME }}" \
             --notes "Version from ${{ github.ref_name }}"
 
       - name: Update index.yaml on gh-pages

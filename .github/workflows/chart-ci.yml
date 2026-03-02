@@ -334,13 +334,8 @@ jobs:
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge .cr-index/index.yaml
 
-      # - name: Install chart-releaser
       - name: Prepare git for chart-releaser action
         run: |
-          # curl -sSLo cr.tar.gz https://github.com/helm/chart-releaser/releases/download/v1.7.0/chart-releaser_1.7.0_linux_amd64.tar.gz
-          # tar -xzf cr.tar.gz
-          # sudo mv cr /usr/local/bin/cr
-
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
@@ -348,7 +343,8 @@ jobs:
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           latest_tag="helix-${VERSION}"
           
-          echo "✅ Latest tag = $latest_tag" && echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
+          echo "✅ Latest tag = $latest_tag" 
+          echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
         
       - name: Run chart-releaser - dev and feature branches
         uses: helm/chart-releaser-action@v1.7.0
@@ -357,8 +353,7 @@ jobs:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
           charts_dir: ${{ inputs.chart-dir }}
-          skpip_upload: true
-          skip_existing: true
+          skip-packaging: true
           skip_packaging: true
           mark_as_latest: false
 
@@ -368,7 +363,6 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
-          skpip_upload: true
           skip_existing: true
-          skip_packaging: true
+          skip-packaging: true
           mark_as_latest: true

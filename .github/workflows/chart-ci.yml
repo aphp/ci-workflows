@@ -360,23 +360,21 @@ jobs:
 
           echo 'Adding cr directory to PATH...'
 
-          if [[ "$latest_tag" == *"-snapshot"* ]]; then
-            MARK_AS_LATEST=false
-          elif [[ "$latest_tag" == *"-dev"* ]]; then
+          if [[ "$latest_tag" == *"-snapshot-"* || "$latest_tag" == *"-dev-"* ]]; then
             MARK_AS_LATEST=false
           else
             MARK_AS_LATEST=true
           fi
 
-          echo "✅ Latest ? $MARK_AS_LATEST" >> "$GITHUB_OUTPUT"
-
-          args+=(--make-release-latest=$MARK_AS_LATEST)
+          echo "✅ Latest ? $MARK_AS_LATEST"
 
           cr index "${args[@]}"
 
-          # git add .cr-index/index.yaml
-          # git commit -m "Update index.yaml for $latest_tag"
-          # git push origin gh-pages
+
+          # Release the chart and update the index.yaml file on gh-pages
+          args+=(--make-release-latest=$MARK_AS_LATEST)
+          args+=(--skip-existing)
+          cr upload "${args[@]}"
 
 
       - name: Run chart-releaser - dev and feature branches

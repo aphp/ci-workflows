@@ -322,10 +322,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
+          REF="${{ github.ref }}"          # ex. refs/heads/main
+          BRANCH="${REF#refs/heads/}"      # remove « refs/heads/ »
+
           git fetch origin gh-pages
           name=$(yq e '.entries | keys | .,[0],' index.yaml)
 
-          git fetch origin "${{ github.ref_name }}"
+          git fetch origin "$BRANCH"
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           
           # lowercase the tag name to avoid issues with gh cli

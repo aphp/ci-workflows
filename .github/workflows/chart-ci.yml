@@ -334,8 +334,13 @@ jobs:
           
           # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
           git fetch --tags
-          latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
-          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+
+          if ! latest_tag=$(git tag --sort=-creatordate | head -n 1); then
+            echo "⚠️ Aucun tag trouvé dans le dépôt – fallback à v0.0.0"
+            latest_tag="v0.0.0"
+          fi
+
+          echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
           
           # Get gh-pages 
           git fetch origin gh-pages

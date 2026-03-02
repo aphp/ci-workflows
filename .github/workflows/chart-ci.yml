@@ -325,19 +325,20 @@ jobs:
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
           # Get gh-pages 
           git fetch origin gh-pages
           mkdir -p .cr-index
           git show origin/gh-pages:index.yaml > .cr-index/index.yaml 2>/dev/null || echo "apiVersion: v1\nentries: {}" > .cr-index/index.yaml
 
+          echo "Merge index.yaml with new chart version..."
           helm repo index .cr-index \
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge .cr-index/index.yaml
 
-      - name: CR ACTION - Update index.yaml on gh-pages and push changes
-        run: |
           args=(-o "${{ github.repository_owner }}" -r "${{ github.event.repository.name }}" --push)
-          echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
 
           echo "Installing chart-releaser on $install_dir..."
           curl -sSLo cr.tar.gz "https://github.com/helm/chart-releaser/releases/download/v1.8.1/chart-releaser_1.8.1_linux_amd64.tar.gz"

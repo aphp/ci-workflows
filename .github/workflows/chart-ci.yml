@@ -331,18 +331,20 @@ jobs:
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
+          
           # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          echo "latest_tag=$TAG" >> "$GITHUB_OUTPUT"
-
+          git fetch --tags
+          latest_tag=$(git tag --sort=-creatordate | head -n 1 || true)
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+          
           # Get gh-pages 
           git fetch origin gh-pages
           mkdir -p .cr-index
           git show origin/gh-pages:index.yaml > .cr-index/index.yaml 2>/dev/null || echo "apiVersion: v1\nentries: {}" > .cr-index/index.yaml
-
           helm repo index .cr-index \
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge .cr-index/index.yaml
+
 
       - name: Run chart-releaser - dev and feature branches
         uses: helm/chart-releaser-action@v1.7.0

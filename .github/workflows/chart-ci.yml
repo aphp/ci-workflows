@@ -303,7 +303,8 @@ jobs:
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           
           # lowercase the tag name to avoid issues with gh cli
-          TAG=${"${{ github.event.repository.name }}-${VERSION}",,} 
+          tag_tmp="${{ github.event.repository.name }}-${VERSION}" 
+          TAG=${tag_tmp,,}
 
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
@@ -320,7 +321,8 @@ jobs:
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
 
           # lowercase the tag name to avoid issues with gh cli
-          TAG=${"${{ github.event.repository.name }}-${VERSION}",,} 
+          tag_tmp="${{ github.event.repository.name }}-${VERSION}" 
+          TAG=${tag_tmp,,}
 
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \

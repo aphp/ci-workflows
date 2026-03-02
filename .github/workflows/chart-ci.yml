@@ -292,15 +292,15 @@ jobs:
         run: |
           helm package ${{ inputs.chart-dir }} -d .cr-release-packages/
 
-          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          export TAG="helix-${VERSION}"
-
       # ### Release steps specific to `feature` or `dev` branch ###
       - name: Create GitHub pre-release + tag
         if: github.ref != 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          TAG="helix-${VERSION}"
+
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
             --prerelease \
@@ -334,17 +334,20 @@ jobs:
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge .cr-index/index.yaml
 
-      - name: Install chart-releaser
+      # - name: Install chart-releaser
+      - name: Prepare git for chart-releaser action
         run: |
-          curl -sSLo cr.tar.gz https://github.com/helm/chart-releaser/releases/download/v1.7.0/chart-releaser_1.7.0_linux_amd64.tar.gz
-          tar -xzf cr.tar.gz
-          sudo mv cr /usr/local/bin/cr
+          # curl -sSLo cr.tar.gz https://github.com/helm/chart-releaser/releases/download/v1.7.0/chart-releaser_1.7.0_linux_amd64.tar.gz
+          # tar -xzf cr.tar.gz
+          # sudo mv cr /usr/local/bin/cr
 
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          
+
           # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          export latest_tag="$TAG"
+          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          latest_tag="helix-${VERSION}"
+          
           echo "✅ Latest tag = $latest_tag" && echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
         
       - name: Run chart-releaser - dev and feature branches

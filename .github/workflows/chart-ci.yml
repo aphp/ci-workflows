@@ -288,15 +288,12 @@ jobs:
           VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
-      - name: Install chart-releaser
-        run: |
-          curl -sSLo cr.tar.gz https://github.com/helm/chart-releaser/releases/download/v1.7.0/chart-releaser_1.7.0_linux_amd64.tar.gz
-          tar -xzf cr.tar.gz
-          sudo mv cr /usr/local/bin/cr
-
       - name: Package chart
         run: |
           helm package ${{ inputs.chart-dir }} -d .cr-release-packages/
+
+          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          export TAG="helix-${VERSION}"
 
       # ### Release steps specific to `feature` or `dev` branch ###
       - name: Create GitHub pre-release + tag
@@ -304,8 +301,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          export TAG="helix-${VERSION}"
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
             --prerelease \
@@ -320,6 +315,7 @@ jobs:
         run: |
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           export TAG="helix-${VERSION}"
+
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
             --title "$TAG" \
@@ -329,22 +325,28 @@ jobs:
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Get gh-pages 
+          git fetch origin gh-pages
+          mkdir -p .cr-index
+          git show origin/gh-pages:index.yaml > .cr-index/index.yaml 2>/dev/null || echo "apiVersion: v1\nentries: {}" > .cr-index/index.yaml
+
+          helm repo index .cr-index \
+            --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
+            --merge .cr-index/index.yaml
+
+      - name: Install chart-releaser
+        run: |
+          curl -sSLo cr.tar.gz https://github.com/helm/chart-releaser/releases/download/v1.7.0/chart-releaser_1.7.0_linux_amd64.tar.gz
+          tar -xzf cr.tar.gz
+          sudo mv cr /usr/local/bin/cr
+
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
           
           # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
           export latest_tag="$TAG"
           echo "✅ Latest tag = $latest_tag" && echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
-          
-          # Get gh-pages 
-          git fetch origin gh-pages
-          mkdir -p .cr-index
-          git show origin/gh-pages:index.yaml > .cr-index/index.yaml 2>/dev/null || echo "apiVersion: v1\nentries: {}" > .cr-index/index.yaml
-          helm repo index .cr-index \
-            --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
-            --merge .cr-index/index.yaml
-
-
+        
       - name: Run chart-releaser - dev and feature branches
         uses: helm/chart-releaser-action@v1.7.0
         if: github.ref != 'refs/heads/main'

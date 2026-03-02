@@ -278,14 +278,14 @@ jobs:
       - name: Add release suffix - SNAPSHOT
         if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
         run: |
-          VERSION_SUFFIX="-snapshot.$(git rev-parse --short ${{ github.sha }})" \
+          VERSION_SUFFIX="-snapshot-$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
       ### Release steps specific to `dev` branch ###
       - name: Add release suffix - DEV
         if: github.ref == 'refs/heads/dev'
         run: |
-          VERSION_SUFFIX="-dev.$(git rev-parse --short ${{ github.sha }})" \
+          VERSION_SUFFIX="-dev-$(git rev-parse --short ${{ github.sha }})" \
           yq -i '.version |= . + env(VERSION_SUFFIX)' ${{ inputs.chart-dir }}/Chart.yaml
 
       - name: Package chart

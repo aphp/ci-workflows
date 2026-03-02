@@ -300,10 +300,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ref_to_keep = ${{github.ref}}
+          git fetch origin gh-pages
+          name=$(yq e '.entries | keys | .,[0],' index.yaml)
+
+          git fetch origin ${{ github.event.repository.name }}
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           
           # lowercase the tag name to avoid issues with gh cli
-          tag_tmp="${{ github.event.repository.name }}-${VERSION}" 
+          tag_tmp="${name}-${VERSION}" 
           TAG=${tag_tmp,,}
 
           gh release create "$TAG" \
@@ -318,10 +323,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          ref_to_keep = ${{github.ref}}
+          git fetch origin gh-pages
+          name=$(yq e '.entries | keys | .,[0],' index.yaml)
 
+          git fetch origin ${{ github.event.repository.name }}
+          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
+          
           # lowercase the tag name to avoid issues with gh cli
-          tag_tmp="${{ github.event.repository.name }}-${VERSION}" 
+          tag_tmp="${name}-${VERSION}" 
           TAG=${tag_tmp,,}
 
           gh release create "$TAG" \

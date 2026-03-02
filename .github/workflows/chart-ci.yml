@@ -334,39 +334,15 @@ jobs:
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge .cr-index/index.yaml
 
-      - name: Prepare git for chart-releaser action
+      - name: CR ACTION - Update index.yaml on gh-pages and push changes
         run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-          # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          
-          latest_tag="helix-${VERSION}"
-          export latest_tag="helix-${VERSION}"
-          
-          echo "✅ Latest tag = $latest_tag" 
-          echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
-        
-      - name: CR   ACTION - Update index.yaml on gh-pages and push changes
-        run: |
-          args=(-o "${{ github.repository_owner }}" -r "${{ github.repository }}" --push)
+          args=(-o "${{ github.repository_owner }}" -r "${{ github.event.repository.name }}" --push)
           echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
 
           echo "Installing chart-releaser on $install_dir..."
           curl -sSLo cr.tar.gz "https://github.com/helm/chart-releaser/releases/download/v1.8.1/chart-releaser_1.8.1_linux_amd64.tar.gz"
           tar -xzf cr.tar.gz -C "/usr/local/bin/"
           rm -f cr.tar.gz
-
-          echo 'Adding cr directory to PATH...'
-
-          if [[ "$latest_tag" == *"-snapshot-"* || "$latest_tag" == *"-dev-"* ]]; then
-            MARK_AS_LATEST=false
-          else
-            MARK_AS_LATEST=true
-          fi
-
-          echo "✅ Latest ? $MARK_AS_LATEST"
 
           cr index "${args[@]}"
 

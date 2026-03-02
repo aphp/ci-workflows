@@ -305,7 +305,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          TAG="helix-${VERSION}"
+          export TAG="helix-${VERSION}"
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
             --prerelease \
@@ -319,7 +319,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          TAG="helix-${VERSION}"
+          export TAG="helix-${VERSION}"
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
             --title "$TAG" \
@@ -333,7 +333,7 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
           
           # Fix for "chart-cr" action bug https://github.com/helm/chart-releaser-action/issues/171#issuecomment-2372464055
-          latest_tag="$TAG"
+          export latest_tag="$TAG"
           echo "✅ Latest tag = $latest_tag" && echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
           
           # Get gh-pages 

@@ -301,7 +301,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          TAG="helix-${VERSION}"
+          
+          # lowercase the tag name to avoid issues with gh cli
+          TAG=${"${{ github.event.repository.name }}-${VERSION}",,} 
 
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
@@ -316,7 +318,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          export TAG="helix-${VERSION}"
+
+          # lowercase the tag name to avoid issues with gh cli
+          TAG=${"${{ github.event.repository.name }}-${VERSION}",,} 
 
           gh release create "$TAG" \
             .cr-release-packages/*.tgz \
@@ -348,27 +352,3 @@ jobs:
           rm -f cr.tar.gz
 
           cr index "${args[@]}"
-
-
-      # - name: Run chart-releaser - dev and feature branches
-      #   uses: helm/chart-releaser-action@v1.7.0
-      #   if: github.ref != 'refs/heads/main'
-      #   env:
-      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      #   with:
-      #     charts_dir: ${{ inputs.chart-dir }}
-      #     skip_upload: true
-      #     skip_existing: true
-      #     skip_packaging: true
-      #     mark_as_latest: false
-
-      # - name: Run chart-releaser - main branch
-      #   uses: helm/chart-releaser-action@v1.7.0
-      #   if: github.ref == 'refs/heads/main'
-      #   env:
-      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      #   with:
-      #     skip_upload: true
-      #     skip_existing: true
-      #     skip_packaging: true
-      #     mark_as_latest: true

@@ -350,7 +350,7 @@ jobs:
         
       - name: CR   ACTION - Update index.yaml on gh-pages and push changes
         run: |
-          args=(-o "$owner" -r "$repo" --push)
+          args=(-o "${{ github.repository_owner }}" -r "${{ github.repository }}" --push)
           echo "✅ Latest tag = $latest_tag" >> "$GITHUB_OUTPUT"
 
           echo "Installing chart-releaser on $install_dir..."

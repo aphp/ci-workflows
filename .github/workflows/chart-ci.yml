@@ -294,17 +294,15 @@ jobs:
         run: |
           helm package ${{ inputs.chart-dir }} -d .cr-release-packages/
 
-      # ### Release steps specific to `feature` or `dev` branch ###
-      - name: Create GitHub pre-release + tag
-        if: github.ref != 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # ### Prepare release variables ###
+      - name: Prepare release variables
+        id: prepare-release
         run: |
           REF="${{ github.ref }}"          # ex. refs/heads/main
           BRANCH="${REF#refs/heads/}"      # remove « refs/heads/ »
 
           git fetch origin gh-pages
-          name=$(yq e '.entries | keys | .,[0],' index.yaml)
+          name=$(yq e '.entries | keys | .[0]' index.yaml)
 
           git fetch origin "$BRANCH"
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
@@ -313,10 +311,19 @@ jobs:
           tag_tmp="${name}-${VERSION}" 
           TAG=${tag_tmp,,}
 
-          gh release create "$TAG" \
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      # ### Release steps specific to `feature` or `dev` branch ###
+      - name: Create GitHub pre-release + tag
+        if: github.ref != 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.prepare-release.outputs.TAG }}" \
             .cr-release-packages/*.tgz \
             --prerelease \
-            --title "$TAG" \
+            --title "${{ steps.prepare-release.outputs.TAG }}" \
             --notes "Version from ${{ github.ref_name }}"
 
       # ### Release steps specific to `main` branch ###
@@ -325,23 +332,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
-          REF="${{ github.ref }}"          # ex. refs/heads/main
-          BRANCH="${REF#refs/heads/}"      # remove « refs/heads/ »
-
-          git fetch origin gh-pages
-          name=$(yq e '.entries | keys | .,[0],' index.yaml)
-
-          git fetch origin "$BRANCH"
-          VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          
-          # lowercase the tag name to avoid issues with gh cli
-          tag_tmp="${name}-${VERSION}" 
-          TAG=${tag_tmp,,}
-
-          gh release create "$TAG" \
+          gh release create "${{ steps.prepare-release.outputs.TAG }}" \
             .cr-release-packages/*.tgz \
-            --title "$TAG" \
+            --title "${{ steps.prepare-release.outputs.TAG }}" \
             --notes "Version from ${{ github.ref_name }}"
 
       - name: Update index.yaml on gh-pages

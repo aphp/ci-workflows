@@ -1,149 +1,341 @@
 # APHP CI GitHub Reusable Workflows
 
-This directory holds the GitHub reusable workflows that you can import in your own project's CIs.
+This repository hosts a collection of **reusable GitHub Actions workflows** for AP‑HP projects.
 
-## Container Images
+The goal is to **centralize CI/CD best practices** (linting, security scans, packaging and publishing) so that each project can:
 
-### Description
+- reuse the same, opinionated workflows,
+- get consistent quality and security checks,
+- keep CI configuration as small as possible.
 
-This component aims to provide with security and quality checks for container images, before pushing them on your project's GHCR (GitHub Container Registry).
+Current workflows mainly target:
 
-### Tools
+- **Container images** (build, scan and push to GHCR),
+- **Helm charts** (lint, test, secure, document and publish).
 
-- Hadolint
-  - Dockerfile linting
+---
 
-- Buildx
-  - Docker Image build
+## Table of contents
 
-- Dockle
-  - Docker Image scan for misconfigurations and ba patterns
+- [Overview](#overview)
+- [Available reusable workflows](#available-reusable-workflows)
+  - [Container Images workflow](#container-images-workflow)
+  - [Helm Charts workflow](#helm-charts-workflow)
+- [How to call a reusable workflow](#how-to-call-a-reusable-workflow)
+- [Branching, versions and environments](#branching-versions-and-environments)
+- [Contributing](#contributing)
+- [License](#license)
 
-- Trivy
-  - Docker Image scan for vulnerabilities
-  - Docker Image scan for potential licensing issues
+---
 
-- Docker
-  - Pushing Docker Image to the project's GHCR
+## Overview
 
-### Reports 
+All workflows are stored under:
 
-All the tools used are generating SARIF reports that are uploaded to your Github project's dashboard. You can consult the reports entries of your project under the `Security` tab -> `Code scanning` category.
+```text
+.github/workflows/
+```
 
+You **do not copy** these YAML files into your own repositories.  
+Instead, your project **calls them as reusable workflows** using the `uses:` syntax described in the GitHub Actions documentation.
 
-### Prerequisites
+This repository is meant to be used across all AP‑HP GitHub projects that need a **standard CI pipeline** for:
 
-This workflow should work out-of-the-box for public projects. Execution on private projects is not supported for now, and may require some additional steps to set the correct permissions for the workflow being able to push the image in your private GHCR.  
+- building and scanning Docker images,
+- validating, scanning and releasing Helm charts.
 
-### How to use
+---
 
-#### Calling this workflow
+## Available reusable workflows
 
-To define a job that calls a reusable workflow, just read the [the corresponding documentation](https://docs.github.com/en/actions/sharing-automations/reusing-workflows#calling-a-reusable-workflow).
+Below is an overview of the main families of workflows currently documented.
 
-You can use the [redcap-containers project CIs](https://github.com/aphp/redcap-containers/tree/main/.github/workflows) as an example.
+### Container Images workflow
 
-#### Inputs definition
+#### Description
 
-This workflow's inputs are as follows : 
-- `dockerfile-path`:
-  - description: "Path to Dockerfile of your project"
-  - required: false
-  - type: string 
-  - default: "Dockerfile"
-- `image-name`:
-  - description: "Image name, including tag"
-  - required: true
-  - type: string
+Provides **security and quality checks** for container images before pushing them to your project’s **GitHub Container Registry (GHCR)**.
 
-#### Releases management
+Typical use cases:
 
-This workflow uses a blend of several actions and steps to handle the release process.
+- container images for applications (e.g. APIs, frontends, backends),
+- base or runtime images (e.g. Jupyter EDS notebooks images),
+- internal utilities or tools.
 
-**This behavior could impact your lifecycle management practices, so be sure to read the lines below!**
+#### Tools
 
-The releases will be handled as follow, whenever you decide to call this workflow (when tagging, pushing, etc.):
-- At build, you image will be tagged and version according to the [Docker Metadata Action](https://github.com/marketplace/actions/docker-metadata-action) rules (`build-image::Buildx - Image Build` step).
-- If the scanning steps ends successfully, your previously tagged image will be pushed in the GHCR repository of your project (`push-docker-image::Push Image to GitHub Container Registry` step).
+The workflow chains several tools:
 
+- **Hadolint**
+  - Linting of `Dockerfile` (style, best practices, common pitfalls).
+- **Buildx**
+  - Docker image build (supports advanced features like build kits, multi‑arch, extra build args…).
+- **Dockle**
+  - Image scan for misconfigurations and bad patterns.
+- **Trivy**
+  - Vulnerability scanning of images.
+  - License scanning of included dependencies.
+- **Docker / GHCR**
+  - Push of validated images to your project’s GHCR repository.
 
-## Helm Charts
+#### Reports
 
-### Description
+All tools that support it produce **SARIF reports**, automatically uploaded to your repository:
 
-This component aims to provide with security and quality checks for Helm charts, before pushing them a repository hosted in your project's Github Page that can be used as a Helm Repository.
+- GitHub UI: `Security` tab → `Code scanning` section.
+- You can browse findings by tool, severity, and impacted files.
 
-### Tools
+#### Prerequisites
 
-- Linting (`lint-test` job)
-  - Helm ct-lint
-  - Kubeconform
+- Works **out of the box for public repositories**.
+- For **private repositories**, you may need to:
+  - adjust **Actions permissions** so the workflow can push to your private GHCR,
+  - ensure the workflow can **write packages** (GHCR).
 
-- Security (`lint-test` job)
-  - Polaris
-  - Trivy
+> The exact permission model may depend on your organization policies; coordinate with your AP‑HP GitHub admins if needed.
 
-- Documentation (`generate-doc` job)
-  - Helm Docs
-  - Helm Values Schema JSON
+#### Inputs
 
-- Publishing (`release` job)
-  - Helm chart-releaser
+Inputs currently supported by the container images workflow:
 
-### Reports 
+| Input                      | Type   | Required | Default            | Description |
+|---------------------------:|:------:|:--------:|:------------------:|-------------|
+| `dockerfile-path`         | string | No       | `Dockerfile`       | Path to the Dockerfile of your project. |
+| `hadolint-ignore`         | string | No       | `""`               | Comma‑separated list of **Hadolint rule IDs** to ignore in **blocking** checks. Findings still appear in reports. |
+| `image-name`              | string | **Yes**  | –                  | Full image name including registry and repository, e.g. `ghcr.io/aphp/my-service`. |
+| `image-custom-tag`        | string | No       | `""`               | Custom tag added **in addition** to automatically generated tags. Typical values: `x86_64-ubuntu-24.04`, `x86_64-ubuntu-24.04-dev`, `nightly`. |
+| `extra-build-args`        | string | No       | `""`               | Extra Docker build arguments, provided as `KEY=VALUE`. Usually passed as a multiline YAML scalar (one `KEY=VALUE` per line). |
+| `dockle-ignore`           | string | No       | `""`               | Comma‑separated list of **Dockle rule IDs** to ignore in **blocking** checks. |
+| `dockle-accept-file`      | string | No       | `""`               | Comma‑separated list of file names to accept in Dockle (`--accept-file`). |
+| `dockle-accept-key`       | string | No       | `""`               | Comma‑separated list of keys to accept in Dockle (`--accept-key`). |
+| `trivy-ignore-vuln-ids`   | string | No       | `""`               | List of vulnerability IDs (`CVE-…`, `GHSA-…`, `AVD-…`) to ignore for **blocking** Trivy checks. Can be comma‑separated or one per line. |
+| `trivy-ignore-license-ids`| string | No       | `""`               | List of license identifiers (e.g. `GPL-3.0-only`, `MIT`) to ignore in **blocking** Trivy license checks. Can be comma‑separated or one per line. |
 
-A few tools (only Trivy at this time) are generating SARIF reports that are uploaded to your Github project's dashboard. You can consult the reports entries of your project under the `Security` tab -> `Code scanning` category.
+Always refer to the workflow file in `.github/workflows/` for the most up‑to‑date list of inputs and defaults.
 
-### Prerequisites
+#### Release management
 
-If you want to publish your chart as an artefact in your Github project, and for it to be retrieved as a Chart by Helm, you must follow these steps : 
-- Create a branch names `gh-pages` in your repository
-- Set this branch as the Github Page branch in the github project's page, under the `Settings` tab -> `Code and automation/Pages` category, `Branch` section
-- Set the correct permissions for Github Actions, under the `Settings` tab -> `Actions/General` category :
-  - Set `Actions permissions` to `Allow all actions and reusable workflows`
-  - Set `Workflow permissions` to `Read and write permissions`
-- Place your Helm Chart under a `charts` directory in the root of your repository, and push your changes
+The workflow relies on a combination of actions and steps to handle **image tagging and publishing**:
 
+- During the build step, tags are computed according to **Docker Metadata Action** rules.
+- If all scans pass successfully:
+  - the previously tagged image is pushed to your project’s GHCR repository.
 
-### How to use
+This behavior directly impacts your **release and tagging strategy**; make sure to align it with your project’s lifecycle (branching model, tags, environments).
 
-#### Calling this workflow
+---
 
-To define a job that calls a reusable workflow, just read the [the corresponding documentation](https://docs.github.com/en/actions/sharing-automations/reusing-workflows#calling-a-reusable-workflow).
+### Helm Charts workflow
 
-#### Inputs definition
+#### Description
 
-This workflow's inputs are as follows : 
-- `chart-dir`:
-  - description: "Directory holding your Chart"
-  - required: true
-  - type: string 
-  - default: "chart"
-- `chart-values`:
-  - description: "Chart values file that will be used for the testing and scanning steps"
-  - required: false
-  - type: string 
-  - default: "chart/values.yaml"
-- `kubernetes-version`:
-  - description: "Version of the target Kubernetes cluster the Chart will run on"
-  - required: true
-  - type: string 
-  - default: "1.24.2"
+Provides **security and quality checks for Helm charts**, and automates **publishing** to a Helm repository hosted via your project’s GitHub Pages (`gh-pages` branch).
 
-#### Releases management
+Typical use cases:
 
-This workflow uses [the Helm Cr Action](https://github.com/marketplace/actions/helm-chart-releaser) to release charts. 
+- Helm charts for applications like **HELIX**, **REDCap**, etc.,
+- any Kubernetes deployment managed via Helm within AP‑HP projects.
 
-**This behavior could impact your lifecycle management practices, so be sure to read the lines below!**
+#### Tools
 
-The releases will be handled as follow :
+The Helm charts workflow is organized by job:
 
-- `dev` branch : 
-  - Update the Chart version Chart.yaml with the `-dev` suffix (`helm-chart-releaser::Add release suffix - DEV` step)
-  - Create the tag with the Chart version (`helm-chart-releaser::Run chart-releaser - DEV` step)
-  - Create the Release with the dev Chart archive as package (`helm-chart-releaser::Run chart-releaser - DEV` step)
-  - Update the `index.yaml` file in the `gh-page` branch of your repo to include the reference to the new dev Chart (`helm-chart-releaser::Run chart-releaser - DEV` step)
-- `main` branch : 
-  - Create the tag with the Chart version (`helm-chart-releaser::Run chart-releaser - MAIN` step)
-  - Create the Release with the Chart archive as package, and mark this release as `latest` (`helm-chart-releaser::Run chart-releaser - MAIN` step)
-  - Update the `index.yaml` file in the `gh-page` branch of your repo to include the reference to the new Chart (`helm-chart-releaser::Run chart-releaser - MAIN` step)
+- **Linting (`lint-test` job)**
+  - `ct lint` (Helm chart-testing),
+  - `kubeconform` (Kubernetes manifest validation against schemas).
+
+- **Security (`lint-test` job)**
+  - **Polaris** (configuration and security best practices),
+  - **Trivy** (vulnerability scanning on rendered manifests).
+
+- **Documentation (`generate-doc` job)**
+  - **helm-docs** (README / values documentation from chart),
+  - **Values schema JSON** generation (for validation and tooling).
+
+- **Publishing (`release` job)**
+  - **helm/chart-releaser** to package charts and update the Helm index.
+
+#### Reports
+
+Some tools (currently **Trivy**) generate **SARIF reports**, uploaded to:
+
+- `Security` tab → `Code scanning`.
+
+This allows you to track vulnerabilities and security issues directly in GitHub.
+
+#### Prerequisites
+
+To be able to **publish charts** and use the repository as a **Helm repository**, ensure:
+
+1. A branch named `gh-pages` exists in your repository.
+2. In your repository **Settings**:
+   - `Code and automation / Pages` → `Branch`: select `gh-pages`.
+3. In **Settings → Actions → General**:
+   - `Actions permissions`: set to **Allow all actions and reusable workflows**.
+   - `Workflow permissions`: set to **Read and write permissions**.
+4. Your chart lives under a `charts` directory at the repository root:
+
+   ```text
+   charts/
+     mychart/
+       Chart.yaml
+       values.yaml
+       templates/...
+   ```
+
+#### Inputs
+
+Inputs currently supported by the Helm charts workflow:
+
+| Input               | Type   | Required | Default               | Description |
+|--------------------:|:------:|:--------:|:---------------------:|-------------|
+| `chart-dir`        | string | **Yes**  | `chart`               | Directory containing your Helm chart (must contain a `Chart.yaml`). |
+| `chart-values`     | string | No       | `chart/values.yaml`   | Values file used for `kubeconform`, Polaris, Trivy and `ct install` tests. |
+| `kubernetes-version`| string| No       | `1.24.2`              | Target Kubernetes version used by kubeconform and Trivy for validations and scans. |
+
+Again, always check the workflow file in `.github/workflows/` for the authoritative list of inputs.
+
+#### Release management
+
+Chart releases are handled via the **Helm CR action**, with behavior depending on the branch:
+
+- On **`feature` branch**:
+  - Chart version in `Chart.yaml` is suffixed with `-snapshot`,
+  - A Git tag is created with this snapshot version,
+  - A **Release** is created containing the snapshot chart archive,
+  - `index.yaml` in the `gh-pages` branch is updated to reference the new **snapshot** chart.
+
+- On **`dev` branch**:
+  - Chart version in `Chart.yaml` is suffixed with `-dev`,
+  - A Git tag is created with this dev version,
+  - A **Release** is created containing the dev chart archive,
+  - `index.yaml` in the `gh-pages` branch is updated to reference the new **dev** chart.
+
+- On **`main` branch**:
+  - A Git tag is created with the chart version from `Chart.yaml`,
+  - A **Release** is created with the chart archive, marked as **latest**,
+  - `index.yaml` in `gh-pages` is updated to reference the new **stable** chart.
+
+This gives you a standard separation between **snapshot**,**dev** and **stable** releases for Helm charts.
+
+---
+
+## How to call a reusable workflow
+
+To use one of these workflows from another repository:
+
+1. Create a workflow file in your project, e.g.:
+
+   ```text
+   .github/workflows/container-ci.yml
+   ```
+
+2. In that file, define a job that **uses** one of the workflows from this repo:
+
+   ```yaml
+   name: Container CI
+
+   on:
+     push:
+       branches: [ main, dev ]
+     pull_request:
+
+  permissions:
+    contents: write
+    security-events: write
+
+   jobs:
+     container-ci:
+       uses: aphp/ci-workflows/.github/workflows/<container-workflow-filename>.yml@main
+       with:
+         image-name: ghcr.io/aphp/my-service
+         dockerfile-path: Dockerfile
+         image-custom-tag: x86_64-ubuntu-24.04
+   ```
+
+3. For Helm charts, a similar pattern applies:
+
+   ```yaml
+   name: Helm Chart CI
+
+   on:
+     push:
+       branches: [ main, dev ]
+     pull_request:
+
+  permissions:
+    contents: write
+    security-events: write
+
+   jobs:
+     helm-ci:
+       uses: aphp/ci-workflows/.github/workflows/<helm-workflow-filename>.yml@main
+       with:
+         chart-dir: charts/mychart
+         chart-values: charts/mychart/values.yaml
+         kubernetes-version: "1.24.2"
+   ```
+
+> Replace `<container-workflow-filename>.yml` and `<helm-workflow-filename>.yml` with the actual filenames from this repository’s `.github/workflows` directory.
+
+For a concrete example of usage, you can refer to a project CI configuration that calls these workflows (e.g. container image or Helm chart repositories within the AP‑HP GitHub organization).
+
+---
+
+## Branching, versions and environments
+
+This repository is versioned like any other Git repository:
+
+- **Branches** such as `feature`, `dev` or `main` represent the maturity of workflows.
+- In your consuming projects, you should:
+  - Prefer **tags** (once defined) for stable usage, e.g. `@v1`,
+  - Use the `dev` branch (`@dev`) when experimenting or adopting new features early.
+
+*note: `feature` name is the name of your branch created from Issue.*
+
+Examples:
+
+- Stable usage (recommended when available):
+
+  ```yaml
+  uses: aphp/ci-workflows/.github/workflows/<workflow>.yml@v1
+  ```
+
+- Development usage (bleeding edge):
+
+  ```yaml
+  uses: aphp/ci-workflows/.github/workflows/<workflow>.yml@dev
+  ```
+
+Coordinate with the AP‑HP CI maintainers to know which refs are recommended for production usage.
+
+---
+
+## Contributing
+
+Contributions, bug reports and improvement ideas are welcome.
+
+- See [`CONTRIBUTING.md`](CONTRIBUTING.md) for:
+  - coding standards,
+  - how to run tests/linters locally,
+  - the release workflow for this repository.
+- Use **GitHub Issues** to:
+  - report problems with existing workflows,
+  - request new reusable workflows,
+  - ask for documentation improvements.
+
+Before opening a pull request:
+
+1. Check there is an existing issue (or open a new one) describing the change.
+2. Update or add documentation for new inputs/behavior.
+3. Run relevant tests or dry‑runs for the workflows you modify.
+
+---
+
+## License
+
+This project is licensed under the **Apache License 2.0**.
+
+- See [`LICENSE`](LICENSE) for details.
+
+By contributing to this repository, you agree that your contributions will be licensed under the same terms.

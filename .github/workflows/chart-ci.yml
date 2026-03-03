@@ -319,7 +319,8 @@ jobs:
             --prerelease \
             --title "${{ steps.prepare-release.outputs.TAG_NAME }}" \
             --target ${{ github.sha}} \
-            --notes "Version from ${{ github.ref_name }}"
+            --notes "Version from ${{ github.ref_name }}" \
+            -F CHANGELOG.md
 
       # ### Release steps specific to `main` branch ###
       - name: Create GitHub release + tag
@@ -332,7 +333,8 @@ jobs:
             --latest \
             --target ${{ github.sha}} \
             --title "${{ steps.prepare-release.outputs.TAG_NAME }}" \
-            --notes "Version from ${{ github.ref_name }}"
+            --notes "Version from ${{ github.ref_name }}" \
+            -F CHANGELOG.md
 
       - name: Update index.yaml on gh-pages
         env:

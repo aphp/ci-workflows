@@ -318,6 +318,7 @@ jobs:
             .cr-release-packages/*.tgz \
             --prerelease \
             --title "${{ steps.prepare-release.outputs.TAG_NAME }}" \
+            --target ${{ github.sha}} \
             --notes "Version from ${{ github.ref_name }}"
 
       # ### Release steps specific to `main` branch ###
@@ -328,6 +329,8 @@ jobs:
         run: |
           gh release create "${{ steps.prepare-release.outputs.TAG_NAME }}" \
             .cr-release-packages/*.tgz \
+            --latest \
+            --target ${{ github.sha}} \
             --title "${{ steps.prepare-release.outputs.TAG_NAME }}" \
             --notes "Version from ${{ github.ref_name }}"
 

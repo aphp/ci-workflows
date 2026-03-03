@@ -300,16 +300,23 @@ jobs:
         run: |
 
           pwd
+          ls -als
 
           REF="${{ github.ref }}"          # ex. refs/heads/main
           BRANCH="${REF#refs/heads/}"      # remove « refs/heads/ »
 
           git fetch origin gh-pages
+
           pwd
-          name=$(yq e '.entries | keys | .[0]' index.yaml)
+          ls -als
+
+          name=$(yq e '.entries | keys | .[0]' index.yaml) 
 
           git fetch origin "$BRANCH"
+
           pwd
+          ls -als
+
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           
           TAG_NAME="${name}-${VERSION}" 

@@ -298,24 +298,8 @@ jobs:
       - name: Prepare release variables
         id: prepare-release
         run: |
-
-          pwd
-          ls -als
-
-          REF="${{ github.ref }}"          # ex. refs/heads/main
-          BRANCH="${REF#refs/heads/}"      # remove « refs/heads/ »
-
           git fetch origin gh-pages
-
-          pwd
-          ls -als
-
-          name=$(yq e '.entries | keys | .[0]' index.yaml) 
-
-          git fetch origin "$BRANCH"
-
-          pwd
-          ls -als
+          name=$(git show origin/gh-pages:index.yaml | yq e '.entries | keys | .,[0],' 2>/dev/null || echo "")
 
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           

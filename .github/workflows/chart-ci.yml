@@ -299,7 +299,7 @@ jobs:
         id: prepare-release
         run: |
           git fetch origin gh-pages
-          name=$(git show origin/gh-pages:index.yaml | yq e '.entries | keys | .,[0],' 2>/dev/null || echo "")
+          name=$(git show origin/gh-pages:index.yaml | yq e '.entries | keys | .[0]' 2>/dev/null || echo " ??? ")
 
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
           

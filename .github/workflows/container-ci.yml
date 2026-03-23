@@ -283,7 +283,7 @@ jobs:
           cat "$IGNORE_FILE"
 
       - name: Generate SBOM (SPDX JSON)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'image'
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"

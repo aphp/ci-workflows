@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install Helm
-        uses: azure/setup-helm@v5.0.0
+        uses: azure/setup-helm@v5
         with:
           version: v3.14.4
 
@@ -50,13 +50,13 @@ jobs:
           helm dependency build ${{ inputs.chart-dir }}
 
       - name: Generate values schema json
-        uses: losisin/helm-values-schema-json-action@v2.5.0
+        uses: losisin/helm-values-schema-json-action@v2
         with:
           input: ${{ inputs.chart-dir }}/values.yaml
           output: ${{ inputs.chart-dir }}/values.schema.json
 
       - name: Helm-docs
-        uses: losisin/helm-docs-github-action@v1.8.0
+        uses: losisin/helm-docs-github-action@v1
         with:
           chart-search-root: ${{ inputs.chart-dir }}
           values-file: ${{ inputs.chart-dir }}/values.yaml
@@ -93,7 +93,7 @@ jobs:
         uses: azure/setup-helm@v5
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.8.0
+        uses: helm/chart-testing-action@v2
 
       - name: Run ct lint
         run: |
@@ -131,7 +131,6 @@ jobs:
             --kubernetes-version ${{ inputs.kubernetes-version }} \
             --strict \
             --summary
-
 
   polaris:
     name: Polaris - Chart Scan
@@ -239,7 +238,7 @@ jobs:
           version: v3.14.4
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.8.0
+        uses: helm/chart-testing-action@v2
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -315,7 +314,7 @@ jobs:
 
       - name: Run chart-releaser - SNAPSHOT
         if: github.ref != 'refs/heads/main' &&  github.ref != 'refs/heads/dev'
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@v1
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
@@ -331,7 +330,7 @@ jobs:
 
       - name: Run chart-releaser - DEV
         if: github.ref == 'refs/heads/dev'
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@v1
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
@@ -341,7 +340,7 @@ jobs:
       ### Release steps specific to `main` branch ###
       - name: Run chart-releaser - MAIN
         if: github.ref == 'refs/heads/main'
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@v1
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:

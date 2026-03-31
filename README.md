@@ -182,6 +182,7 @@ To be able to **publish charts** and use the repository as a **Helm repository**
        values.yaml
        templates/...
    ```
+5. Add a CHANGELOG.md in your main branch. It is attached with the created release tag during the release process.
 
 #### Inputs
 

@@ -52,14 +52,14 @@ jobs:
       - name: Generate values schema json
         uses: losisin/helm-values-schema-json-action@v2
         with:
-          input: ${{ inputs.chart-dir }}/values.yaml
+          values: ${{ inputs.chart-values }}
           output: ${{ inputs.chart-dir }}/values.schema.json
 
       - name: Helm-docs
         uses: losisin/helm-docs-github-action@v1
         with:
           chart-search-root: ${{ inputs.chart-dir }}
-          values-file: ${{ inputs.chart-dir }}/values.yaml
+          values-file: ${{ inputs.chart-values }}
           output-file: ${{ inputs.chart-dir }}/README.md
           template-files: ${{ inputs.chart-dir }}/README.md.gotpl
           sort-values-order: file

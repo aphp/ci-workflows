@@ -58,7 +58,7 @@ jobs:
           output: ${{ inputs.chart-dir }}/values.schema.json
 
       - name: Helm-docs
-        uses: losisin/helm-docs-github-action@v1.8.03
+        uses: losisin/helm-docs-github-action@v1.8.0
         with:
           chart-search-root: ${{ inputs.chart-dir }}
           values-file: ${{ inputs.chart-values }}

@@ -25,12 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Install Helm
-        uses: azure/setup-helm@v4.3.1
+        uses: azure/setup-helm@v5
         with:
           version: v3.14.4
 
@@ -52,22 +52,22 @@ jobs:
           helm dependency build ${{ inputs.chart-dir }}
 
       - name: Generate values schema json
-        uses: losisin/helm-values-schema-json-action@v1.5.3
+        uses: losisin/helm-values-schema-json-action@v2.5.0
         with:
-          input: ${{ inputs.chart-dir }}/values.yaml
+          values: ${{ inputs.chart-values }}
           output: ${{ inputs.chart-dir }}/values.schema.json
 
       - name: Helm-docs
-        uses: losisin/helm-docs-github-action@v1.3.3
+        uses: losisin/helm-docs-github-action@v1.8.0
         with:
           chart-search-root: ${{ inputs.chart-dir }}
-          values-file: ${{ inputs.chart-dir }}/values.yaml
+          values-file: ${{ inputs.chart-values }}
           output-file: ${{ inputs.chart-dir }}/README.md
           template-files: ${{ inputs.chart-dir }}/README.md.gotpl
           sort-values-order: file
 
       - name: Upload packaged Chart
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: packaged-chart
           path: ${{ inputs.chart-dir }}
@@ -81,21 +81,21 @@ jobs:
     needs: helm-build-chart
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Download packaged Chart
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: packaged-chart
           path: ${{ inputs.chart-dir }}
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4.3.1
+        uses: azure/setup-helm@v5
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.6.1
+        uses: helm/chart-testing-action@v2.8.0
 
       - name: Run ct lint
         run: |
@@ -110,13 +110,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download packaged Chart
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: packaged-chart
           path: ${{ inputs.chart-dir }}
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4.3.1
+        uses: azure/setup-helm@v5
         with:
           version: v3.14.4
 
@@ -141,7 +141,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download packaged Chart
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: packaged-chart
           path: ${{ inputs.chart-dir }}
@@ -179,7 +179,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download packaged Chart
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: packaged-chart
           path: ${{ inputs.chart-dir }}
@@ -225,23 +225,23 @@ jobs:
       - trivy
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Download packaged Chart
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: packaged-chart
           path: ${{ inputs.chart-dir }}
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4.3.1
+        uses: azure/setup-helm@v5
         with:
           version: v3.14.4
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@v2.6.1
+        uses: helm/chart-testing-action@v2.8.0
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -272,7 +272,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

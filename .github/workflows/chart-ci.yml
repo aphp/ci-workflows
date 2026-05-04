@@ -150,7 +150,7 @@ jobs:
         run: |
           mkdir -p .local/bin
           curl -s https://api.github.com/repos/FairwindsOps/polaris/releases/latest | \
-            jq '.assets[] | select(.name=="polaris_linux_amd64.tar.gz")'.browser_download_url | \
+            jq '.assets[] | select(.name | endswith("linux_amd64.tar.gz"))'.browser_download_url | \
             xargs curl -s -L | \
           tar xvz -C .local/bin polaris
           echo "$PWD/.local/bin" >> $GITHUB_PATH

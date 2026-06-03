@@ -283,7 +283,7 @@ jobs:
           cat "$IGNORE_FILE"
 
       - name: Generate SBOM (SPDX JSON)
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'image'
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
@@ -297,7 +297,7 @@ jobs:
           filePath: 'image-sbom.spdx.json'
 
       - name: Build Trivy Vulnerability report
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
           skip-setup-trivy: true
@@ -317,7 +317,7 @@ jobs:
           category: vulnerability
 
       - name: Build Trivy License report
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
           skip-setup-trivy: true
@@ -337,7 +337,7 @@ jobs:
           category: license
 
       - name: Run Trivy Vulnerability scan
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         # Overriding env vars from previous steps for them not to interfere with the scan
         env:
           TRIVY_FORMAT: 'table'
@@ -354,7 +354,7 @@ jobs:
           trivyignores: 'ci-trivy-ignore.txt'
 
       - name: Run Trivy License scan
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         # Overriding env vars from previous steps for them not to interfere with the scan
         env:
           TRIVY_FORMAT: 'table'

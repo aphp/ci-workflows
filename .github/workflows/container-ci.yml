@@ -310,14 +310,14 @@ jobs:
           limit-severities-for-sarif: 'false'
           output: 'trivy-vuln-results.sarif'
 
-      - name: Patch Trivy SARIF rule IDs for GitHub
+      - name: Patch Trivy Vulnerability SARIF rule IDs for GitHub
         run: |
           python3 <<'PY'
           import json
           import sys
           from pathlib import Path
 
-          path = Path("trivy-license-results.sarif")
+          path = Path("trivy-vuln-results.sarif")
           max_len = 200
 
           try:
@@ -347,6 +347,7 @@ jobs:
               json.dump(sarif, f, ensure_ascii=False, indent=2)
 
           print("SARIF patched")
+          print(f"File: {path}")
           print(f"id fixed: {total_id_fixed}")
           print(f"ruleId fixed: {total_ruleId_fixed}")
           PY

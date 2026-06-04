@@ -310,6 +310,15 @@ jobs:
           limit-severities-for-sarif: 'false'
           output: 'trivy-vuln-results.sarif'
 
+      - name: Debug scripts
+        run: |
+          pwd
+          git branch --show-current || true
+          git rev-parse --short HEAD || true
+          ls -la .github || true
+          ls -la .github/scripts || true
+          find .github -maxdepth 3 -type f | sort || true
+
         # Licence can have id and ruleId too long for github
       - name: Patch Trivy SARIF rule IDs for GitHub
         run: python3 .github/scripts/patch-trivy-sarif.py trivy-license-results.sarif

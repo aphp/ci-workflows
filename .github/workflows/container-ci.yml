@@ -283,7 +283,7 @@ jobs:
           cat "$IGNORE_FILE"
 
       - name: Generate SBOM (SPDX JSON)
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'image'
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
@@ -297,7 +297,7 @@ jobs:
           filePath: 'image-sbom.spdx.json'
 
       - name: Build Trivy Vulnerability report
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
           skip-setup-trivy: true
@@ -317,7 +317,7 @@ jobs:
           category: vulnerability
 
       - name: Build Trivy License report
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
           skip-setup-trivy: true
@@ -330,6 +330,49 @@ jobs:
           limit-severities-for-sarif: 'false'
           output: 'trivy-license-results.sarif'
 
+      - name: Patch Trivy Vulnerability SARIF rule IDs for GitHub
+        run: |
+          python3 <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          max_len = 200
+          paths = [Path("trivy-vuln-results.sarif"), Path("trivy-license-results.sarif")]
+
+          for path in paths :
+            try:
+                with path.open("r", encoding="utf-8") as f:
+                    sarif = json.load(f)
+            except FileNotFoundError:
+                print(f"ERROR: SARIF file not found: {path}")
+                sys.exit(1)
+
+            total_id_fixed = 0
+            total_ruleId_fixed = 0
+
+            for run in sarif.get("runs", []):
+                for rule in run.get("tool", {}).get("driver", {}).get("rules", []):
+                    if isinstance(rule.get("id"), str) and len(rule["id"]) > max_len:
+                        rule.setdefault("properties", {})["originalTrivyRuleId"] = rule["id"]
+                        rule["id"] = rule["id"][:max_len]
+                        total_id_fixed += 1
+
+                for result in run.get("results", []):
+                    if isinstance(result.get("ruleId"), str) and len(result["ruleId"]) > max_len:
+                        result.setdefault("properties", {})["originalTrivyRuleId"] = result["ruleId"]
+                        result["ruleId"] = result["ruleId"][:max_len]
+                        total_ruleId_fixed += 1
+
+            with path.open("w", encoding="utf-8") as f:
+                json.dump(sarif, f, ensure_ascii=False, indent=2)
+
+            print("SARIF patched")
+            print(f"File: {path}")
+            print(f"id fixed: {total_id_fixed}")
+            print(f"ruleId fixed: {total_ruleId_fixed}")
+          PY
+
       - name: Upload Trivy License report to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         with:
@@ -337,7 +380,7 @@ jobs:
           category: license
 
       - name: Run Trivy Vulnerability scan
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         # Overriding env vars from previous steps for them not to interfere with the scan
         env:
           TRIVY_FORMAT: 'table'
@@ -354,7 +397,7 @@ jobs:
           trivyignores: 'ci-trivy-ignore.txt'
 
       - name: Run Trivy License scan
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         # Overriding env vars from previous steps for them not to interfere with the scan
         env:
           TRIVY_FORMAT: 'table'

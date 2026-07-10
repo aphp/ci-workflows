@@ -57,9 +57,9 @@ on:
         required: false
         default: ''
         type: string
-      trivy-ignore-secrets:
+      trivy-ignore-files:
         description: |
-          List of files paths to ignore secrets in Trivy (/opt/conda/lib/R/library/gargle/extdata/fake_service_account.json).
+          List of files paths to ignore in Trivy (/opt/conda/lib/R/library/gargle/extdata/fake_service_account.json).
           One per line (recommended) or comma-separated.
         required: false
         default: ''
@@ -288,12 +288,6 @@ jobs:
             printf '%s\n' "$TRIVY_IGNORE_LICENSE_IDS" | tr ',' '\n' >> "$IGNORE_FILE"
           fi
 
-          if [ -n "$TRVIY_IGNORE_SECRETS" ]; then
-            echo "" >> "$IGNORE_FILE"
-            echo "# Ignore secrets" >> "$IGNORE_FILE"
-            printf '%s\n' "$TRVIY_IGNORE_SECRETS" | tr ',' '\n' >> "$IGNORE_FILE"
-          fi
-
           echo "[INFO] Generated $IGNORE_FILE:"
           cat "$IGNORE_FILE"
 
@@ -410,6 +404,7 @@ jobs:
           severity: 'CRITICAL'
           format: 'table'
           trivyignores: 'ci-trivy-ignore.txt'
+          skip-files: ${{ inputs.trivy-ignore-files }}
 
       - name: Run Trivy License scan
         uses: aquasecurity/trivy-action@v0.36.0

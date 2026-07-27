@@ -12,10 +12,23 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+        - info
+        - warning
+        - debug
+      environment:
+        description: 'Environment to run tests against'
+        type: environment
+        required: true
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
@@ -34,3 +47,24 @@ jobs:
                 level: warning
               line-length: disable # don't bother me with this rule    
               comments-indentation: disable  # don't bother me with this rule
+
+  tests-container-ci:
+    uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
+    with:
+      dockerfile-path: "./test/container/build-notebook.yml"
+      hadolint-ignore: "DL3008,DL3016"
+      image-name: aphp-busybox
+      image-custom-tag: test
+      dockle-ignore: "CIS-DI-0010,DKL-DI-0001"
+      dockle-accept-file:
+      dockle-accept-key:
+      extra-build-args: |
+        KEY_TEST_1=value_test_1 
+        KEY_TEST_2="value test 2" 
+
+      trivy-ignore-vuln-ids: |
+        CVE-2024-21508
+      trivy-ignore-license-ids: |
+        WTFPL
+
+#  tests-container-chart:

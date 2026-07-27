@@ -209,12 +209,14 @@ jobs:
           category: code-quality
 
       - name: Download Dockle
+        if: inputs.dockle-accept-key != "" || inputs.dockle-accept-file != ""  || inputs.dockle-ignore != ""
         run: |
           curl -sSL "https://github.com/goodwithtech/dockle/releases/download/v0.4.15/dockle_0.4.15_Linux-386.tar.gz" -o dockle.tar.gz
           tar -xzf dockle.tar.gz
           sudo mv dockle /usr/local/bin/dockle
 
       - name: Run dockle
+        if: inputs.dockle-accept-key != "" || inputs.dockle-accept-file != ""  || inputs.dockle-ignore != ""
         run: |
           dockle_keys_formater(){ IFS=', ' read -r -a keys_list <<< "$VALUES" && \
           formated_keys="" && \
@@ -228,7 +230,6 @@ jobs:
           --exit-code 1 \
           --format json \
           "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
-
 
   image-scan:
     name: Image Scan

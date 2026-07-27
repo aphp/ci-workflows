@@ -115,7 +115,7 @@ jobs:
 
       - name: Push Image to GitHub Container Registry
         run: |
-          docker rmi --all-tags aphp-busybox
+          docker rmi aphp-busybox
    
 
 

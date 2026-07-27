@@ -199,21 +199,6 @@ jobs:
         with:
           length: 7
 
-      # - name: Build Dockle report
-      #   uses: goodwithtech/dockle-action@v0.4.15
-      #   with:
-      #     image: "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
-      #     format: sarif
-      #     output: 'dockle-report.sarif'
-      #     exit-code: 0
-
-      # - name: Upload Dockle report to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v4
-      #   with:
-      #     sarif_file: 'dockle-report.sarif'
-      #     category: code-quality
-
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
         with:
@@ -231,6 +216,13 @@ jobs:
       - name: Run dockle
 #        if: inputs.dockle-accept-key != "" || inputs.dockle-accept-file != ""  || inputs.dockle-ignore != ""
         run: |
+
+          echo "===== Docker images ====="
+          docker image ls
+
+          echo "===== Inspect ====="
+          docker image inspect "${{ inputs.image-name }}:sha-${{ steps.short-sha.outputs.sha }}"
+
           dockle_keys_formater(){ IFS=', ' read -r -a keys_list <<< "$VALUES" && \
           formated_keys="" && \
           for key in ${keys_list[@]}; do formated_keys="${formated_keys} $ARG $key" ; done && \

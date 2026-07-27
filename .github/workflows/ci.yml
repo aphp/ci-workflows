@@ -84,6 +84,7 @@ jobs:
         CVE-2024-21508
       trivy-ignore-license-ids: |
         WTFPL
+      dry-run: true
 
   tests-container-ci-without-dockle-accept:
     needs: [build]
@@ -100,6 +101,7 @@ jobs:
         CVE-2024-21508
       trivy-ignore-license-ids: |
         WTFPL
+      dry-run: true
 
   tests-container-ci-without-dockle-accept-without-trivyignore:
     needs: build
@@ -112,6 +114,7 @@ jobs:
       extra-build-args: |
         KEY_TEST_1=value_test_1 
         KEY_TEST_2="value test 2" 
+      dry-run: true
 
 
   clean-up:

@@ -56,6 +56,12 @@ on:
         required: false
         default: ''
         type: string
+      dry-run:
+        description: |
+          Run Jobs but donn't push image in Docker registry.
+        required: false
+        default: false
+        type: boolean 
 
 jobs:
   dockerfile-lint:
@@ -454,5 +460,6 @@ jobs:
           password: ${{secrets.GITHUB_TOKEN}}
 
       - name: Push Image to GitHub Container Registry
+        if: ${{ !inputs.dry-run }}
         run: |
           docker push --all-tags ${{ inputs.image-name }}

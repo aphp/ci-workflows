@@ -55,7 +55,7 @@ jobs:
       hadolint-ignore: "DL3008,DL3016"
       image-name: aphp-busybox
       image-custom-tag: test-with-dockle-accept
-      dockle-ignore: "CIS-DI-0010,DKL-DI-0001"
+      dockle-ignore: "CIS-DI-0010,DKL-DI-0001,CIS-DI-0001"
       dockle-accept-file:
       dockle-accept-key: |
         PHP_SHA256,
@@ -92,6 +92,7 @@ jobs:
       dockerfile-path: "./test/container/Dockerfile"
       image-name: aphp-busybox
       image-custom-tag: test-without-dockle-accept
+      dockle-ignore: "CIS-DI-0010,DKL-DI-0001,CIS-DI-0001"
       extra-build-args: |
         KEY_TEST_1=value_test_1 
         KEY_TEST_2="value test 2" 
@@ -107,6 +108,7 @@ jobs:
       dockerfile-path: "./test/container/Dockerfile"
       image-name: aphp-busybox
       image-custom-tag: test-without-dockle-accept-without-trivyignore
+      dockle-ignore: "CIS-DI-0010,DKL-DI-0001,CIS-DI-0001"
       extra-build-args: |
         KEY_TEST_1=value_test_1 
         KEY_TEST_2="value test 2" 

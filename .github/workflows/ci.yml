@@ -48,7 +48,7 @@ jobs:
               comments-indentation: disable  # don't bother me with this rule
 
   tests-container-ci-with-dockle-accept:
-    needs: build
+    needs: [build]
     uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
     with:
       dockerfile-path: "./test/container/Dockerfile"
@@ -86,7 +86,7 @@ jobs:
         WTFPL
 
   tests-container-ci-without-dockle-accept:
-    needs: build
+    needs: [build]
     uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
     with:
       dockerfile-path: "./test/container/Dockerfile"
@@ -113,7 +113,7 @@ jobs:
 
 
   clean-up:
-    needs: tests-container-ci-without-dockle-accept-without-trivyignore, tests-container-ci-without-dockle-accept, tests-container-ci-with-dockle-accept
+    needs: [tests-container-ci-without-dockle-accept-without-trivyignore && tests-container-ci-without-dockle-accept, tests-container-ci-with-dockle-accept]
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     steps:

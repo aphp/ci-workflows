@@ -61,22 +61,6 @@ jobs:
         PHP_SHA256,
         PHPIZE_DEPS,
         PHP_INI_DIR,
-        savedAptMark,
-        PHP_CFLAGS,
-        PHP_CPPFLAGS,
-        PHP_VERSION,
-        PHP_URL,
-        PHP_LDFLAGS,
-        s!,
-        PHP_ASC_URL,
-        -D_FILE_OFFSET_BITS,        
-        GNUPGHOME,
-        CFLAGS,
-        include,
-        CPPFLAGS,
-        LDFLAGS,
-        APT::AutoRemove::RecommendsImportant,
-        LDFLAGS
       extra-build-args: |
         KEY_TEST_1=value_test_1 
         KEY_TEST_2="value test 2" 

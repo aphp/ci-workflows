@@ -1,5 +1,5 @@
+---
 name: Chart CI
-
 on:
   workflow_call:
     inputs:

@@ -51,7 +51,7 @@ jobs:
   tests-container-ci:
     uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
     with:
-      dockerfile-path: "./test/container/build-notebook.yml"
+      dockerfile-path: "./test/container/Dockerfile"
       hadolint-ignore: "DL3008,DL3016"
       image-name: aphp-busybox
       image-custom-tag: test

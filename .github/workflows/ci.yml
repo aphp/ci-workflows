@@ -113,7 +113,7 @@ jobs:
 
 
   clean-up:
-    needs: [tests-container-ci-without-dockle-accept-without-trivyignore && tests-container-ci-without-dockle-accept, tests-container-ci-with-dockle-accept]
+    needs: [tests-container-ci-without-dockle-accept-without-trivyignore, tests-container-ci-without-dockle-accept, tests-container-ci-with-dockle-accept]
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     steps:

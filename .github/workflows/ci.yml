@@ -49,7 +49,7 @@ jobs:
 
   tests-container-ci-with-dockle-accept:
     needs: [build]
-    uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
+    uses: "./.github/workflows/container-ci.yml"
     with:
       dockerfile-path: "./test/container/Dockerfile"
       hadolint-ignore: "DL3008,DL3016"
@@ -72,7 +72,7 @@ jobs:
 
   tests-container-ci-without-dockle-accept:
     needs: [build]
-    uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
+    uses: "./.github/workflows/container-ci.yml"
     with:
       dockerfile-path: "./test/container/Dockerfile"
       image-name: aphp-busybox
@@ -89,7 +89,7 @@ jobs:
 
   tests-container-ci-without-dockle-accept-without-trivyignore:
     needs: build
-    uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
+    uses: "./.github/workflows/container-ci.yml"
     with:
       dockerfile-path: "./test/container/Dockerfile"
       image-name: aphp-busybox

@@ -47,23 +47,85 @@ jobs:
               line-length: disable # don't bother me with this rule    
               comments-indentation: disable  # don't bother me with this rule
 
-  tests-container-ci:
+  tests-container-ci-with-dockle-accept:
+    needs: build
     uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
     with:
       dockerfile-path: "./test/container/Dockerfile"
       hadolint-ignore: "DL3008,DL3016"
       image-name: aphp-busybox
-      image-custom-tag: test
+      image-custom-tag: test-with-dockle-accept
       dockle-ignore: "CIS-DI-0010,DKL-DI-0001"
       dockle-accept-file:
-      dockle-accept-key:
+      dockle-accept-key: |
+        PHP_SHA256,
+        PHPIZE_DEPS,
+        PHP_INI_DIR,
+        savedAptMark,
+        PHP_CFLAGS,
+        PHP_CPPFLAGS,
+        PHP_VERSION,
+        PHP_URL,
+        PHP_LDFLAGS,
+        s!,
+        PHP_ASC_URL,
+        -D_FILE_OFFSET_BITS,        
+        GNUPGHOME,
+        CFLAGS,
+        include,
+        CPPFLAGS,
+        LDFLAGS,
+        APT::AutoRemove::RecommendsImportant,
+        LDFLAGS
       extra-build-args: |
         KEY_TEST_1=value_test_1 
         KEY_TEST_2="value test 2" 
-
       trivy-ignore-vuln-ids: |
         CVE-2024-21508
       trivy-ignore-license-ids: |
         WTFPL
+
+  tests-container-ci-without-dockle-accept:
+    needs: build
+    uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
+    with:
+      dockerfile-path: "./test/container/Dockerfile"
+      image-name: aphp-busybox
+      image-custom-tag: test-without-dockle-accept
+      extra-build-args: |
+        KEY_TEST_1=value_test_1 
+        KEY_TEST_2="value test 2" 
+      trivy-ignore-vuln-ids: |
+        CVE-2024-21508
+      trivy-ignore-license-ids: |
+        WTFPL
+
+  tests-container-ci-without-dockle-accept-without-trivyignore:
+    needs: build
+    uses: "aphp/ci-workflows/.github/workflows/container-ci.yml@main"
+    with:
+      dockerfile-path: "./test/container/Dockerfile"
+      image-name: aphp-busybox
+      image-custom-tag: test-without-dockle-accept-without-trivyignore
+      extra-build-args: |
+        KEY_TEST_1=value_test_1 
+        KEY_TEST_2="value test 2" 
+
+
+  clean-up:
+    needs: tests-container-ci-without-dockle-accept-without-trivyignore, tests-container-ci-without-dockle-accept, tests-container-ci-with-dockle-accept
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Push Image to GitHub Container Registry
+        run: |
+          docker rmi --all-tags aphp-busybox
+   
+
 
 #  tests-container-chart:

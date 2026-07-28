@@ -1,3 +1,4 @@
+---
 name: CI
 
 # Controls when the workflow will run
@@ -44,7 +45,7 @@ jobs:
             rules:
               trailing-spaces:
                 level: warning
-              line-length: disable # don't bother me with this rule    
+              line-length: disable # don't bother me with this rule
               comments-indentation: disable  # don't bother me with this rule
 
   tests-container-ci-with-dockle-accept:
@@ -62,8 +63,8 @@ jobs:
         PHPIZE_DEPS,
         PHP_INI_DIR,
       extra-build-args: |
-        KEY_TEST_1=value_test_1 
-        KEY_TEST_2="value test 2" 
+        KEY_TEST_1=value_test_1
+        KEY_TEST_2="value test 2"
       trivy-ignore-vuln-ids: |
         CVE-2024-21508
       trivy-ignore-license-ids: |
@@ -79,8 +80,8 @@ jobs:
       image-custom-tag: test-without-dockle-accept
       dockle-ignore: "CIS-DI-0010,DKL-DI-0001,CIS-DI-0001"
       extra-build-args: |
-        KEY_TEST_1=value_test_1 
-        KEY_TEST_2="value test 2" 
+        KEY_TEST_1=value_test_1
+        KEY_TEST_2="value test 2"
       trivy-ignore-vuln-ids: |
         CVE-2024-21508
       trivy-ignore-license-ids: |
@@ -96,8 +97,8 @@ jobs:
       image-custom-tag: test-without-dockle-accept-without-trivyignore
       dockle-ignore: "CIS-DI-0010,DKL-DI-0001,CIS-DI-0001"
       extra-build-args: |
-        KEY_TEST_1=value_test_1 
-        KEY_TEST_2="value test 2" 
+        KEY_TEST_1=value_test_1
+        KEY_TEST_2="value test 2"
       dry-run: true
 
 
@@ -109,7 +110,7 @@ jobs:
       - name: End Test Workflow
         run: |
           docker images
-   
+
 
 
 #  tests-container-chart:

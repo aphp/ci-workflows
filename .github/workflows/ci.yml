@@ -115,7 +115,9 @@ jobs:
 
       - name: Push Image to GitHub Container Registry
         run: |
-          docker rmi aphp-busybox
+          docker images
+          docker rmi -f aphp-busybox:test-without-dockle-accept-without-trivyignore aphp-busybox:test-without-dockle-accept aphp-busybox:test-with-dockle-accept
+          docker images
    
 
 

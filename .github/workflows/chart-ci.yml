@@ -1,5 +1,5 @@
+---
 name: Chart CI
-
 on:
   workflow_call:
     inputs:
@@ -200,7 +200,7 @@ jobs:
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: 'trivy-vuln-results.sarif' 
+          sarif_file: 'trivy-vuln-results.sarif'
 
       - name: Run Trivy Vulnerability scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -221,7 +221,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - kubeconform
-      - polaris 
+      - polaris
       - trivy
     steps:
       - name: Checkout
@@ -302,8 +302,8 @@ jobs:
           name=$(git show origin/gh-pages:index.yaml | yq e '.entries | keys | .[0]' 2>/dev/null || echo " ??? ")
 
           VERSION=$(yq '.version' ${{ inputs.chart-dir }}/Chart.yaml)
-          
-          TAG_NAME="${name}-${VERSION}" 
+
+          TAG_NAME="${name}-${VERSION}"
 
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
@@ -343,7 +343,7 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-          # Get gh-pages 
+          # Get gh-pages
           git fetch origin gh-pages
           mkdir -p .cr-index
           git show origin/gh-pages:index.yaml > .cr-index/index.yaml 2>/dev/null || echo "apiVersion: v1\nentries: {}" > .cr-index/index.yaml

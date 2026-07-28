@@ -1,0 +1,5 @@
+ARG IMAGE=busybox
+
+FROM ${IMAGE}
+
+

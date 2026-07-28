@@ -106,17 +106,8 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     steps:
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
-
-      - name: Push Image to GitHub Container Registry
+      - name: End Test Workflow
         run: |
-          docker images
-          docker rmi -f aphp-busybox:test-without-dockle-accept-without-trivyignore aphp-busybox:test-without-dockle-accept aphp-busybox:test-with-dockle-accept
           docker images
    
 
